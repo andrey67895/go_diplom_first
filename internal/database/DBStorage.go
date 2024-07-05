@@ -54,15 +54,19 @@ func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 }
 
 func (db DBStorageModel) InitTable(ctx context.Context) {
-	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS auth`)
+	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS auth; DROP TABLE IF EXISTS orders;`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}
-	_, err = db.DB.ExecContext(ctx, `CREATE TABLE auth (
-        "id" bigserial primary key,
-        "login" text not null unique,
-        "hash_pass" text not null
-      )`)
+	_, err = db.DB.ExecContext(ctx, `
+		CREATE TABLE auth (
+        	"id" bigserial primary key,
+        	"login" text not null unique,
+        	"hash_pass" text not null);
+		CREATE TABLE orders (
+			"ordersId" bigint primary key,
+			"loginId" bigint not null);
+	`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}

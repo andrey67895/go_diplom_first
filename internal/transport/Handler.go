@@ -4,12 +4,29 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/andrey67895/go_diplom_first/internal/database"
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
+
+func SaveOrders(w http.ResponseWriter, req *http.Request) {
+	b, err := io.ReadAll(req.Body)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
+		return
+	}
+	orderId, err := strconv.Atoi(string(b))
+	if !helpers.LuhnValid(orderId) || err != nil {
+		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
+		return
+	}
+
+}
 
 func UserRegister(w http.ResponseWriter, req *http.Request) {
 	var tModel model.UserModel
