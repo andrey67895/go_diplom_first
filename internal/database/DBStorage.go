@@ -12,9 +12,9 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-var DbStorage DBStorage
+var DBStorage DBStorageModel
 
-type DBStorage struct {
+type DBStorageModel struct {
 	DB  *sql.DB
 	ctx context.Context
 }
@@ -29,17 +29,17 @@ func InitDB(ctx context.Context) {
 	if err = db.PingContext(tCtx); err != nil {
 		helpers.TLog.Error(err.Error())
 	}
-	dbStorage := DBStorage{DB: db, ctx: ctx}
+	dbStorage := DBStorageModel{DB: db, ctx: ctx}
 	dbStorage.InitTable(tCtx)
-	DbStorage = dbStorage
+	DBStorage = dbStorage
 }
 
-func (db DBStorage) CreateAuth(authModel model.UserModel) error {
+func (db DBStorageModel) CreateAuth(authModel model.UserModel) error {
 	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO auth(login, hash_pass) values ($1,$2)`, authModel.Login, helpers.EncodeHash(*authModel.Password))
 	return err
 }
 
-func (db DBStorage) GetAuth(login string) (*model.UserModel, error) {
+func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 	var data model.UserModel
 	rows := db.DB.QueryRow("SELECT * from auth where login = $1", login)
 	err := rows.Scan(&data.ID, &data.Login, &data.Password)
@@ -53,7 +53,7 @@ func (db DBStorage) GetAuth(login string) (*model.UserModel, error) {
 	return &data, nil
 }
 
-func (db DBStorage) InitTable(ctx context.Context) {
+func (db DBStorageModel) InitTable(ctx context.Context) {
 	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS auth`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())

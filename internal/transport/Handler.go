@@ -26,10 +26,10 @@ func UserRegister(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	auth, err := database.DbStorage.GetAuth(*tModel.Login)
+	auth, err := database.DBStorage.GetAuth(*tModel.Login)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			err := database.DbStorage.CreateAuth(tModel)
+			err := database.DBStorage.CreateAuth(tModel)
 			if err != nil {
 				helpers.TLog.Error(err.Error())
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -77,7 +77,7 @@ func AuthUser(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	auth, err := database.DbStorage.GetAuth(*tModel.Login)
+	auth, err := database.DBStorage.GetAuth(*tModel.Login)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			helpers.TLog.Error(err.Error())
