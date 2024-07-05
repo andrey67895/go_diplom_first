@@ -57,14 +57,14 @@ func main() {
 }
 
 type UserModel struct {
-	Id       *int64  `json:"id,omitempty"`
+	ID       *int64  `json:"id,omitempty"`
 	Login    *string `json:"login"`
 	Password *string `json:"password"`
 }
 
 func (u UserModel) isValid() error {
 	if u.Login == nil || u.Password == nil || *u.Login == "" || *u.Password == "" {
-		return errors.New(fmt.Sprintf("Ошибка валидации! Обязательные поля: password и login, не могут быть пустыми или null: %+v", u))
+		return fmt.Errorf("ошибка валидации! Обязательные поля: password и login, не могут быть пустыми или null: %+v", u)
 	}
 	return nil
 }
@@ -82,7 +82,7 @@ func generateJWT(username string) (string, error) {
 	tokenString, err := token.SignedString(sampleSecretKey)
 
 	if err != nil {
-		log.Error("Something Went Wrong: %s", err.Error())
+		log.Error("Ошибка генерации токена: %s", err.Error())
 		return "", err
 	}
 	return tokenString, nil
@@ -105,7 +105,7 @@ func UserRegister(w http.ResponseWriter, req *http.Request) {
 
 	auth, err := dbStorage.GetAuth(*tModel.Login)
 	if err != nil {
-		if errors.As(err, &sql.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			err := dbStorage.CreateAuth(tModel)
 			if err != nil {
 				log.Error(err.Error())
@@ -113,6 +113,11 @@ func UserRegister(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			token, err := generateJWT(*tModel.Login)
+			if err != nil {
+				log.Error(err.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 			cookie := &http.Cookie{
 				Name:     "Token",
 				Value:    token,
@@ -167,7 +172,7 @@ func (db DBStorage) CreateAuth(authModel UserModel) error {
 func (db DBStorage) GetAuth(login string) (*UserModel, error) {
 	var data UserModel
 	rows := db.DB.QueryRow("SELECT * from auth where login = $1", login)
-	err := rows.Scan(&data.Id, &data.Login, &data.Password)
+	err := rows.Scan(&data.ID, &data.Login, &data.Password)
 	if err != nil {
 		return nil, err
 	}
