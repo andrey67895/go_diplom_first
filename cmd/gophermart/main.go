@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -22,6 +23,8 @@ import (
 var log = Log()
 var dbStorage DBStorage
 var DatabaseDsn string
+var RunAddress string
+var AccrualSystemAddress string
 
 func Log() *zap.SugaredLogger {
 	logger, err := zap.NewDevelopment()
@@ -34,8 +37,20 @@ func Log() *zap.SugaredLogger {
 
 func InitServerConfig() {
 
-	flag.StringVar(&DatabaseDsn, "d", fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", `localhost`, 5434, `docker`, `docker`, `postgres`), "DataBase dsn for server")
-	//flag.StringVar(&DatabaseDsn, "d", "", "DataBase dsn for server")
+	flag.StringVar(&DatabaseDsn, "d", fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", `localhost`, 5434, `docker`, `docker`, `postgres`), "Aдрес подключения к базе данных")
+	flag.StringVar(&RunAddress, "a", ":8080", "Aдрес и порт запуска сервиса")
+	flag.StringVar(&AccrualSystemAddress, "r", "", "адрес системы расчёта начислений")
+
+	flag.Parse()
+	if envDatabaseDsn := os.Getenv("DATABASE_URI"); envDatabaseDsn != "" {
+		DatabaseDsn = envDatabaseDsn
+	}
+	if envRunAddress := os.Getenv("RUN_ADDRESS"); envRunAddress != "" {
+		RunAddress = envRunAddress
+	}
+	if envAccrualSystemAddress := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); envAccrualSystemAddress != "" {
+		AccrualSystemAddress = envAccrualSystemAddress
+	}
 }
 
 func main() {
@@ -53,7 +68,7 @@ func main() {
 	//r.Post("/api/user/balance/withdraw", handlers.GetPing(iStorage))
 	//r.Get("/api/user/withdrawals", handlers.GetAllData(iStorage))
 
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Fatal(http.ListenAndServe(RunAddress, r))
 }
 
 type UserModel struct {
