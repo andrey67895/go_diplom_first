@@ -24,14 +24,14 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 
 	orders, err := database.DBStorage.GetOrdersByLogin(login)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		} else {
-			helpers.TLog.Error(err.Error())
-			http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
-			return
-		}
+		helpers.TLog.Error(err.Error())
+		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+		return
+
+	}
+	if len(*orders) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
 	}
 
 	marshal, err := json.Marshal(orders)
