@@ -28,19 +28,18 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
 		return
 	}
-	orderId, err := strconv.Atoi(string(b))
-	if !helpers.LuhnValid(orderId) || err != nil {
+	orderID, err := strconv.Atoi(string(b))
+	if !helpers.LuhnValid(orderID) || err != nil {
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
 		return
 	}
-	orders, err := database.DBStorage.GetOrders(orderId)
+	orders, err := database.DBStorage.GetOrders(orderID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			var i64 int64
-			i64 = int64(orderId)
+			i64 := int64(orderID)
 			err := database.DBStorage.CreateOrders(model.OrdersModel{
 				OrdersID: &i64,
-				LoginId:  &login})
+				Login:    &login})
 			if err != nil {
 				helpers.TLog.Error(err.Error())
 				http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
@@ -54,7 +53,7 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	if *orders.LoginId == login {
+	if *orders.Login == login {
 		w.WriteHeader(http.StatusOK)
 		return
 	} else {

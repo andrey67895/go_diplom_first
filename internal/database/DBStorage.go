@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/andrey67895/go_diplom_first/internal/config"
@@ -39,22 +40,18 @@ func (db DBStorageModel) CreateAuth(authModel model.UserModel) error {
 	return err
 }
 
-func (db DBStorageModel) GetOrders(orderId int) (*model.OrdersModel, error) {
+func (db DBStorageModel) GetOrders(orderID int) (*model.OrdersModel, error) {
 	var data model.OrdersModel
-	rows := db.DB.QueryRow("SELECT * from orders where orders_id = $1", orderId)
-	err := rows.Scan(&data.OrdersID, &data.LoginId)
-	if err != nil {
-		return nil, err
-	}
-	err = rows.Err()
-	if err != nil {
+	rows := db.DB.QueryRow("SELECT * from orders where orders_id = $1", orderID)
+	err := rows.Scan(&data.OrdersID, &data.Login)
+	if errors.Join(rows.Err(), err) != nil {
 		return nil, err
 	}
 	return &data, nil
 }
 
 func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {
-	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO orders(orders_id, login) values ($1,$2)`, ordersModel.OrdersID, ordersModel.LoginId)
+	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO orders(orders_id, login) values ($1,$2)`, ordersModel.OrdersID, ordersModel.Login)
 	return err
 }
 
@@ -62,11 +59,7 @@ func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 	var data model.UserModel
 	rows := db.DB.QueryRow("SELECT * from auth where login = $1", login)
 	err := rows.Scan(&data.Login, &data.Password)
-	if err != nil {
-		return nil, err
-	}
-	err = rows.Err()
-	if err != nil {
+	if errors.Join(rows.Err(), err) != nil {
 		return nil, err
 	}
 	return &data, nil
