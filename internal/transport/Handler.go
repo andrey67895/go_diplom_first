@@ -13,6 +13,40 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
+func GetOrders(w http.ResponseWriter, req *http.Request) {
+	cookie, err := req.Cookie("Token")
+	if err != nil {
+		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
+		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
+		return
+	}
+	login := helpers.DecodeJWT(cookie.Value)
+
+	orders, err := database.DBStorage.GetOrdersByLogin(login)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		} else {
+			helpers.TLog.Error(err.Error())
+			http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	marshal, err := json.Marshal(orders)
+	if err != nil {
+		http.Error(w, "Ошибка записи ответа", http.StatusNotFound)
+		return
+	}
+	_, errWrite := w.Write(marshal)
+	if errWrite != nil {
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	return
+}
+
 func SaveOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, err := req.Cookie("Token")
 	if err != nil {
@@ -33,7 +67,7 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
 		return
 	}
-	orders, err := database.DBStorage.GetOrders(orderID)
+	orders, err := database.DBStorage.GetOrdersByOrderID(orderID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			i64 := int64(orderID)

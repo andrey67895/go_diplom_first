@@ -12,7 +12,7 @@ func GetRouters() *chi.Mux {
 	r.Post("/api/user/register", UserRegister)
 	r.Post("/api/user/login", AuthUser)
 	r.Post("/api/user/orders", SaveOrders)
-	//r.Get("/api/user/orders", handlers.GetDataForJSON(iStorage))
+	r.Get("/api/user/orders", GetOrders)
 	//
 	//r.Get("/api/user/balance", handlers.GetDataByPathParams(iStorage))
 	//r.Post("/api/user/balance/withdraw", handlers.GetPing(iStorage))

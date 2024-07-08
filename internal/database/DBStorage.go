@@ -40,11 +40,35 @@ func (db DBStorageModel) CreateAuth(authModel model.UserModel) error {
 	return err
 }
 
-func (db DBStorageModel) GetOrders(orderID int) (*model.OrdersModel, error) {
+func (db DBStorageModel) GetOrdersByOrderID(orderID int) (*model.OrdersModel, error) {
 	var data model.OrdersModel
-	rows := db.DB.QueryRow("SELECT * from orders where orders_id = $1", orderID)
-	err := rows.Scan(&data.OrdersID, &data.Login)
+	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from orders where orders_id = $1", orderID)
+	err := rows.Scan(&data.OrdersID, &data.Login, &data.Accrual, &data.Status, &data.UploadedAT)
 	if errors.Join(rows.Err(), err) != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+func (db DBStorageModel) GetOrdersByLogin(login string) (*[]model.OrdersModel, error) {
+	data := make([]model.OrdersModel, 0)
+
+	rows, err := db.DB.QueryContext(db.ctx, "SELECT * from orders where login = $1", login)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v model.OrdersModel
+		err = rows.Scan(&v.OrdersID, &v.Login, &v.Accrual, &v.Status, &v.UploadedAT)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, v)
+	}
+
+	err = rows.Err()
+	if err != nil {
 		return nil, err
 	}
 	return &data, nil
@@ -57,7 +81,7 @@ func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {
 
 func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 	var data model.UserModel
-	rows := db.DB.QueryRow("SELECT * from auth where login = $1", login)
+	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from auth where login = $1", login)
 	err := rows.Scan(&data.Login, &data.Password)
 	if errors.Join(rows.Err(), err) != nil {
 		return nil, err
@@ -76,7 +100,10 @@ func (db DBStorageModel) InitTable(ctx context.Context) {
         	"hash_pass" text not null);
 		CREATE TABLE orders (
 			"orders_id" bigint primary key,
-			"login" text not null);
+			"login" text not null,
+			"accrual"  bigint,
+			"status" text not null default 'NEW',
+			"uploaded_at" timestamp not null default now());
 	`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
