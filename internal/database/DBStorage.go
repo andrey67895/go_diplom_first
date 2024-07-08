@@ -39,10 +39,29 @@ func (db DBStorageModel) CreateAuth(authModel model.UserModel) error {
 	return err
 }
 
+func (db DBStorageModel) GetOrders(orderId int) (*model.OrdersModel, error) {
+	var data model.OrdersModel
+	rows := db.DB.QueryRow("SELECT * from orders where orders_id = $1", orderId)
+	err := rows.Scan(&data.OrdersID, &data.LoginId)
+	if err != nil {
+		return nil, err
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {
+	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO orders(orders_id, login) values ($1,$2)`, ordersModel.OrdersID, ordersModel.LoginId)
+	return err
+}
+
 func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 	var data model.UserModel
 	rows := db.DB.QueryRow("SELECT * from auth where login = $1", login)
-	err := rows.Scan(&data.ID, &data.Login, &data.Password)
+	err := rows.Scan(&data.Login, &data.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +79,11 @@ func (db DBStorageModel) InitTable(ctx context.Context) {
 	}
 	_, err = db.DB.ExecContext(ctx, `
 		CREATE TABLE auth (
-        	"id" bigserial primary key,
-        	"login" text not null unique,
+        	"login" text not null primary key,
         	"hash_pass" text not null);
 		CREATE TABLE orders (
-			"ordersId" bigint primary key,
-			"loginId" bigint not null);
+			"orders_id" bigint primary key,
+			"login" text not null);
 	`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())

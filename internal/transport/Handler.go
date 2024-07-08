@@ -14,6 +14,14 @@ import (
 )
 
 func SaveOrders(w http.ResponseWriter, req *http.Request) {
+	cookie, err := req.Cookie("Token")
+	if err != nil {
+		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
+		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
+		return
+	}
+	login := helpers.DecodeJWT(cookie.Value)
+
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
@@ -25,7 +33,34 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
 		return
 	}
-
+	orders, err := database.DBStorage.GetOrders(orderId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			var i64 int64
+			i64 = int64(orderId)
+			err := database.DBStorage.CreateOrders(model.OrdersModel{
+				OrdersID: &i64,
+				LoginId:  &login})
+			if err != nil {
+				helpers.TLog.Error(err.Error())
+				http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusAccepted)
+			return
+		} else {
+			helpers.TLog.Error(err.Error())
+			http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+			return
+		}
+	}
+	if *orders.LoginId == login {
+		w.WriteHeader(http.StatusOK)
+		return
+	} else {
+		http.Error(w, "Номер заказа уже был загружен другим пользователем!", http.StatusConflict)
+		return
+	}
 }
 
 func UserRegister(w http.ResponseWriter, req *http.Request) {
