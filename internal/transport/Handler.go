@@ -30,7 +30,13 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 		return
 
 	}
+	w.Header().Set("Content-Type", "application/json")
 	if len(*orders) == 0 {
+		_, errWrite := w.Write([]byte("[]"))
+		if errWrite != nil {
+			helpers.TLog.Error(errWrite.Error())
+			return
+		}
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
