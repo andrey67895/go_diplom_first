@@ -130,7 +130,7 @@ func (db DBStorageModel) InitTable(ctx context.Context) {
 		CREATE TABLE orders (
 			"orders_id" varchar primary key,
 			"login" text not null,
-			"accrual"  bigint,
+			"accrual"  double precision,
 			"status" text not null default 'NEW',
 			"uploaded_at" timestamp not null default now());
 	`)

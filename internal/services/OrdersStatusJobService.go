@@ -27,12 +27,12 @@ func GerAndUpdateOrderStatusByAccrual(number string) {
 			helpers.TLog.Error(err.Error())
 			return
 		}
-		if *tModel.Status == "PROCESSING" {
-			database.DBStorage.UpdateOrders(tModel)
-		} else if *tModel.Status == "INVALID" {
-			database.DBStorage.UpdateOrders(tModel)
-		} else if *tModel.Status == "PROCESSED" {
-			database.DBStorage.UpdateOrders(tModel)
+		if *tModel.Status == "PROCESSING" || *tModel.Status == "INVALID" || *tModel.Status == "PROCESSED" {
+			err := database.DBStorage.UpdateOrders(tModel)
+			if err != nil {
+				helpers.TLog.Error(err.Error())
+				return
+			}
 		}
 	}
 }
