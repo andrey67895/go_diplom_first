@@ -27,27 +27,32 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 	helpers.TLog.Info("Balance ::: ", *currentBalanceModel.Balance)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	withdrawnBalanceSum, err := database.DBStorage.GetWithdrawnBalanceSumByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	currentAndWithdrawnModel := model.CurrentAndWithdrawnModel{Current: currentBalanceModel.Balance, Withdrawn: withdrawnBalanceSum}
 	marshal, err := json.Marshal(currentAndWithdrawnModel)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		return
-	}
-	_, err = w.Write(marshal)
-	helpers.TLog.Info("marshal ::: ", string(marshal))
-	if err != nil {
-		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(marshal)
+	helpers.TLog.Info("marshal ::: ", string(marshal))
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 }
 
 func GetOrders(w http.ResponseWriter, req *http.Request) {
