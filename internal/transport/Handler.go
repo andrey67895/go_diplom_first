@@ -41,6 +41,7 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	_, err = w.Write(marshal)
+	helpers.TLog.Info("marshal ::: ", string(marshal))
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		return
