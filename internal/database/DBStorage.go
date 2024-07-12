@@ -103,6 +103,11 @@ func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {
 	return err
 }
 
+func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualModel) error {
+	_, err := db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderId)
+	return err
+}
+
 func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 	var data model.UserModel
 	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from auth where login = $1", login)
