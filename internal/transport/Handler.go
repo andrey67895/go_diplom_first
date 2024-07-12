@@ -50,7 +50,6 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	return
 }
 
 func SaveOrders(w http.ResponseWriter, req *http.Request) {
