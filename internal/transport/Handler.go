@@ -24,7 +24,7 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 	login := helpers.DecodeJWT(cookie.Value)
 	currentBalanceModel, err := database.DBStorage.GetCurrentBalanceByLogin(login)
 	helpers.TLog.Info("LOGIN ::: ", login)
-	helpers.TLog.Info("Balance ::: ", currentBalanceModel.Balance)
+	helpers.TLog.Info("Balance ::: ", *currentBalanceModel.Balance)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		return
