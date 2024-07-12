@@ -23,8 +23,6 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 	}
 	login := helpers.DecodeJWT(cookie.Value)
 	currentBalanceModel, err := database.DBStorage.GetCurrentBalanceByLogin(login)
-	helpers.TLog.Info("LOGIN ::: ", login)
-	helpers.TLog.Info("Balance ::: ", *currentBalanceModel.Balance)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -46,7 +44,6 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write(marshal)
-	helpers.TLog.Info("marshal ::: ", string(marshal))
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
