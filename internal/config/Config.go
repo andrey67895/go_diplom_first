@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -25,4 +26,5 @@ func InitServerConfig() {
 	if envAccrualSystemAddress := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); envAccrualSystemAddress != "" {
 		AccrualSystemAddress = envAccrualSystemAddress
 	}
+	log.Fatal("Accrual", " :::: ", AccrualSystemAddress)
 }
