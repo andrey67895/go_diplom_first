@@ -13,7 +13,7 @@ import (
 var client http.Client
 
 func GerOrderStatusByAccrual(number string) {
-	url := "http://" + config.AccrualSystemAddress + "/api/orders/" + number
+	url := config.AccrualSystemAddress + "/api/orders/" + number
 	r, _ := http.NewRequest(http.MethodGet, url, nil)
 	body, err := client.Do(r)
 	if err != nil {
