@@ -3,7 +3,6 @@ package services
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/andrey67895/go_diplom_first/internal/config"
 	"github.com/andrey67895/go_diplom_first/internal/database"
@@ -50,7 +49,7 @@ func OrdersStatusJob() {
 			GerAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
 		}
 		helpers.TLog.Info("Окончание проверки статусов")
-		time.Sleep(3 * time.Second)
+		//time.Sleep(3 * time.Second)
 
 	}
 
