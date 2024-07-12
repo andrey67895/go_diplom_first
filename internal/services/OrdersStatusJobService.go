@@ -50,7 +50,7 @@ func OrdersStatusJob() {
 			GerAndUpdateOrderStatusByAccrual(*order.OrdersID)
 		} //status.
 		helpers.TLog.Info("Окончание проверки статусов")
-		time.Sleep(20 * time.Second)
+		time.Sleep(3 * time.Second)
 
 	}
 
