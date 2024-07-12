@@ -32,11 +32,6 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if len(*orders) == 0 {
-		_, errWrite := w.Write([]byte("[]"))
-		if errWrite != nil {
-			helpers.TLog.Error(errWrite.Error())
-			return
-		}
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -78,12 +73,12 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
 		return
 	}
-	orders, err := database.DBStorage.GetOrdersByOrderID(orderID)
+	orders, err := database.DBStorage.GetOrdersByOrderID(string(b))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			i64 := int64(orderID)
+			tNumber := string(b)
 			err := database.DBStorage.CreateOrders(model.OrdersModel{
-				OrdersID: &i64,
+				OrdersID: &tNumber,
 				Login:    &login})
 			if err != nil {
 				helpers.TLog.Error(err.Error())

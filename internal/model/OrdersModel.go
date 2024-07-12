@@ -3,7 +3,7 @@ package model
 import "time"
 
 type OrdersModel struct {
-	OrdersID   *int64     `json:"number"`
+	OrdersID   *string    `json:"number"`
 	Login      *string    `json:"-"`
 	Accrual    *int64     `json:"accrual"`
 	Status     *string    `json:"status"`

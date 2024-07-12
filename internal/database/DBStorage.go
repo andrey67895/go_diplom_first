@@ -40,7 +40,7 @@ func (db DBStorageModel) CreateAuth(authModel model.UserModel) error {
 	return err
 }
 
-func (db DBStorageModel) GetOrdersByOrderID(orderID int) (*model.OrdersModel, error) {
+func (db DBStorageModel) GetOrdersByOrderID(orderID string) (*model.OrdersModel, error) {
 	var data model.OrdersModel
 	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from orders where orders_id = $1", orderID)
 	err := rows.Scan(&data.OrdersID, &data.Login, &data.Accrual, &data.Status, &data.UploadedAT)
@@ -99,7 +99,7 @@ func (db DBStorageModel) InitTable(ctx context.Context) {
         	"login" text not null primary key,
         	"hash_pass" text not null);
 		CREATE TABLE orders (
-			"orders_id" bigint primary key,
+			"orders_id" varchar primary key,
 			"login" text not null,
 			"accrual"  bigint,
 			"status" text not null default 'NEW',
