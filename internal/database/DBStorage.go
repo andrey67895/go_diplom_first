@@ -138,13 +138,23 @@ func (db DBStorageModel) GetWithdrawnBalanceByLogin(login string) (*model.Withdr
 	return &data, nil
 }
 
+func (db DBStorageModel) GetWithdrawnBalanceSumByLogin(login string) (*float64, error) {
+	var data float64
+	rows := db.DB.QueryRowContext(db.ctx, "select coalesce(sum(wb.withdrawn), 0) from withdrawn_balance wb where wb.login = $1", login)
+	err := rows.Scan(&data)
+	if errors.Join(rows.Err(), err) != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
 func (db DBStorageModel) CreateOrUpdateCurrentBalance(currentBalanceModel model.CurrentBalanceModel) error {
 	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, currentBalanceModel.Login, currentBalanceModel.Balance)
 	return err
 }
 
 func (db DBStorageModel) InitTable(ctx context.Context) {
-	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS auth; DROP TABLE IF EXISTS orders;`)
+	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS auth; DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS withdrawn_balance; DROP TABLE IF EXISTS current_balance;`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}

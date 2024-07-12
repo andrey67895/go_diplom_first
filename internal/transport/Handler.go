@@ -27,12 +27,12 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 		helpers.TLog.Error(err.Error())
 		return
 	}
-	withdrawnBalanceModel, err := database.DBStorage.GetWithdrawnBalanceByLogin(login)
+	withdrawnBalanceSum, err := database.DBStorage.GetWithdrawnBalanceSumByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		return
 	}
-	currentAndWithdrawnModel := model.CurrentAndWithdrawnModel{Current: currentBalanceModel.Balance, Withdrawn: withdrawnBalanceModel.Withdrawn}
+	currentAndWithdrawnModel := model.CurrentAndWithdrawnModel{Current: currentBalanceModel.Balance, Withdrawn: withdrawnBalanceSum}
 	marshal, err := json.Marshal(currentAndWithdrawnModel)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
