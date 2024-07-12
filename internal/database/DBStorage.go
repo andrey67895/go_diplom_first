@@ -116,7 +116,6 @@ func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualMode
 		if err != nil {
 			return err
 		}
-
 	} else {
 		_, err = db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
 	}
