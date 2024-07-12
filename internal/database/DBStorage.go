@@ -118,6 +118,21 @@ func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 	return &data, nil
 }
 
+func (db DBStorageModel) GetCurrentAndWithdrawnByLogin(login string) (*model.UserModel, error) {
+	var data model.UserModel
+	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from withdrawn_accrual where login = $1", login)
+	err := rows.Scan(&data.Login, &data.Password)
+	if errors.Join(rows.Err(), err) != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+func (db DBStorageModel) CreateOrUpdateCurrentBalance(currentBalanceModel model.CurrentBalanceModel) error {
+	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_accrual as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, currentBalanceModel.Login, currentBalanceModel.Balance)
+	return err
+}
+
 func (db DBStorageModel) InitTable(ctx context.Context) {
 	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS auth; DROP TABLE IF EXISTS orders;`)
 	if err != nil {
@@ -133,6 +148,13 @@ func (db DBStorageModel) InitTable(ctx context.Context) {
 			"accrual"  double precision,
 			"status" text not null default 'NEW',
 			"uploaded_at" timestamp not null default now());
+		CREATE TABLE withdrawn_accrual (
+			"login" varchar,
+			"withdrawn" double precision not null);
+		CREATE TABLE current_accrual (
+			"login" varchar primary key,
+			"current" double precision not null);
+		CREATE INDEX withdrawn_login_idx ON withdrawn_accrual (login);
 	`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())

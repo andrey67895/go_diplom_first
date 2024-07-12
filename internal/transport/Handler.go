@@ -14,6 +14,21 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
+func GetBalance(w http.ResponseWriter, req *http.Request) {
+	cookie, err := req.Cookie("Token")
+	if err != nil {
+		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
+		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
+		return
+	}
+	login := helpers.DecodeJWT(cookie.Value)
+	_, err = database.DBStorage.GetCurrentAndWithdrawnByLogin(login)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		return
+	}
+}
+
 func GetOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, err := req.Cookie("Token")
 	if err != nil {

@@ -34,6 +34,9 @@ func GerAndUpdateOrderStatusByAccrual(number string) {
 				helpers.TLog.Error(err.Error())
 				return
 			}
+			if *tModel.Status == "PROCESSED" {
+
+			}
 		}
 	}
 }
@@ -48,7 +51,7 @@ func OrdersStatusJob() {
 		}
 		for _, order := range *orders {
 			GerAndUpdateOrderStatusByAccrual(*order.OrdersID)
-		} //status.
+		}
 		helpers.TLog.Info("Окончание проверки статусов")
 		time.Sleep(3 * time.Second)
 
