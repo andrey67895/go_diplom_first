@@ -118,10 +118,20 @@ func (db DBStorageModel) GetAuth(login string) (*model.UserModel, error) {
 	return &data, nil
 }
 
-func (db DBStorageModel) GetCurrentAndWithdrawnByLogin(login string) (*model.UserModel, error) {
-	var data model.UserModel
-	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from withdrawn_accrual where login = $1", login)
-	err := rows.Scan(&data.Login, &data.Password)
+func (db DBStorageModel) GetCurrentBalanceByLogin(login string) (*model.CurrentBalanceModel, error) {
+	var data model.CurrentBalanceModel
+	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from current_balance where login = $1", login)
+	err := rows.Scan(&data.Login, &data.Balance)
+	if errors.Join(rows.Err(), err) != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
+func (db DBStorageModel) GetWithdrawnBalanceByLogin(login string) (*model.WithdrawnBalanceModel, error) {
+	var data model.WithdrawnBalanceModel
+	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from withdrawn_balance where login = $1", login)
+	err := rows.Scan(&data.Login, &data.Withdrawn)
 	if errors.Join(rows.Err(), err) != nil {
 		return nil, err
 	}
@@ -129,7 +139,7 @@ func (db DBStorageModel) GetCurrentAndWithdrawnByLogin(login string) (*model.Use
 }
 
 func (db DBStorageModel) CreateOrUpdateCurrentBalance(currentBalanceModel model.CurrentBalanceModel) error {
-	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_accrual as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, currentBalanceModel.Login, currentBalanceModel.Balance)
+	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, currentBalanceModel.Login, currentBalanceModel.Balance)
 	return err
 }
 
@@ -148,13 +158,13 @@ func (db DBStorageModel) InitTable(ctx context.Context) {
 			"accrual"  double precision,
 			"status" text not null default 'NEW',
 			"uploaded_at" timestamp not null default now());
-		CREATE TABLE withdrawn_accrual (
+		CREATE TABLE withdrawn_balance (
 			"login" varchar,
 			"withdrawn" double precision not null);
-		CREATE TABLE current_accrual (
+		CREATE TABLE current_balance (
 			"login" varchar primary key,
 			"current" double precision not null);
-		CREATE INDEX withdrawn_login_idx ON withdrawn_accrual (login);
+		CREATE INDEX withdrawn_login_idx ON withdrawn_balance (login);
 	`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())

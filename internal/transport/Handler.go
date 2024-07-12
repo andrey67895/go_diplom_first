@@ -22,11 +22,28 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	login := helpers.DecodeJWT(cookie.Value)
-	_, err = database.DBStorage.GetCurrentAndWithdrawnByLogin(login)
+	currentBalanceModel, err := database.DBStorage.GetCurrentBalanceByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		return
 	}
+	withdrawnBalanceModel, err := database.DBStorage.GetWithdrawnBalanceByLogin(login)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		return
+	}
+	currentAndWithdrawnModel := model.CurrentAndWithdrawnModel{Current: currentBalanceModel.Balance, Withdrawn: withdrawnBalanceModel.Withdrawn}
+	marshal, err := json.Marshal(currentAndWithdrawnModel)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		return
+	}
+	_, err = w.Write(marshal)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func GetOrders(w http.ResponseWriter, req *http.Request) {

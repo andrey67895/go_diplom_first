@@ -13,7 +13,7 @@ import (
 
 var client http.Client
 
-func GerAndUpdateOrderStatusByAccrual(number string) {
+func GerAndUpdateOrderStatusByAccrual(login string, number string) {
 	url := config.AccrualSystemAddress + "/api/orders/" + number
 	r, _ := http.NewRequest(http.MethodGet, url, nil)
 	body, err := client.Do(r)
@@ -35,7 +35,11 @@ func GerAndUpdateOrderStatusByAccrual(number string) {
 				return
 			}
 			if *tModel.Status == "PROCESSED" {
-
+				err := database.DBStorage.CreateOrUpdateCurrentBalance(model.CurrentBalanceModel{Login: &login, Balance: tModel.Accrual})
+				if err != nil {
+					helpers.TLog.Error(err.Error())
+					return
+				}
 			}
 		}
 	}
@@ -50,7 +54,7 @@ func OrdersStatusJob() {
 			return
 		}
 		for _, order := range *orders {
-			GerAndUpdateOrderStatusByAccrual(*order.OrdersID)
+			GerAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
 		}
 		helpers.TLog.Info("Окончание проверки статусов")
 		time.Sleep(3 * time.Second)
