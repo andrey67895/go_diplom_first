@@ -14,7 +14,7 @@ func InitServer() {
 	helpers.InitLog()
 	config.InitServerConfig()
 	database.InitDB(context.Background())
-	go helpers.TLog.Fatal(http.ListenAndServe(config.RunAddress, transport.GetRouters()))
-	go helpers.TLog.Fatal(http.ListenAndServe(config.AccrualSystemAddress, transport.GetRouters()))
+	go helpers.TLog.Fatal(http.ListenAndServe(config.RunAddress, transport.GetRoutersGophermart()))
+	//go helpers.TLog.Fatal(http.ListenAndServe(config.AccrualSystemAddress, transport.GetRoutersAccrual()))
 	select {}
 }

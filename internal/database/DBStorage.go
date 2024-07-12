@@ -50,6 +50,30 @@ func (db DBStorageModel) GetOrdersByOrderID(orderID string) (*model.OrdersModel,
 	return &data, nil
 }
 
+func (db DBStorageModel) GetOrdersByNotFinalStatus() (*[]model.OrdersModel, error) {
+	data := make([]model.OrdersModel, 0)
+
+	rows, err := db.DB.QueryContext(db.ctx, "SELECT * from orders where status in ('NEW', 'PROCESSING')")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v model.OrdersModel
+		err = rows.Scan(&v.OrdersID, &v.Login, &v.Accrual, &v.Status, &v.UploadedAT)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, v)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, err
+	}
+	return &data, nil
+}
+
 func (db DBStorageModel) GetOrdersByLogin(login string) (*[]model.OrdersModel, error) {
 	data := make([]model.OrdersModel, 0)
 
