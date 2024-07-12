@@ -115,7 +115,7 @@ func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualMode
 			tx.Rollback()
 			return err
 		}
-		_, err = tx.ExecContext(db.ctx, `INSERT IN5TO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, login, ordersAccrualModel.Accrual)
+		_, err = tx.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, login, ordersAccrualModel.Accrual)
 		if err != nil {
 			tx.Rollback()
 			return err
