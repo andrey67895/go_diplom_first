@@ -149,7 +149,7 @@ func (db DBStorageModel) GetWithdrawnBalanceSumByLogin(login string) (*float64, 
 }
 
 func (db DBStorageModel) CreateOrUpdateCurrentBalance(currentBalanceModel model.CurrentBalanceModel) error {
-	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, currentBalanceModel.Login, currentBalanceModel.Balance)
+	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, *currentBalanceModel.Login, *currentBalanceModel.Balance)
 	return err
 }
 
