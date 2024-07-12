@@ -29,19 +29,10 @@ func GerAndUpdateOrderStatusByAccrual(login string, number string) {
 			return
 		}
 		if *tModel.Status == "PROCESSING" || *tModel.Status == "INVALID" || *tModel.Status == "PROCESSED" {
-			err := database.DBStorage.UpdateOrders(tModel)
+			err := database.DBStorage.UpdateOrders(tModel, *tModel.Status == "PROCESSED", login)
 			if err != nil {
 				helpers.TLog.Error(err.Error())
 				return
-			}
-			if *tModel.Status == "PROCESSED" {
-				helpers.TLog.Info("LOGIN::: ", login)
-				helpers.TLog.Info("Balance::: ", *tModel.Accrual)
-				err := database.DBStorage.CreateOrUpdateCurrentBalance(model.CurrentBalanceModel{Login: &login, Balance: tModel.Accrual})
-				if err != nil {
-					helpers.TLog.Error(err.Error())
-					return
-				}
 			}
 		}
 	}

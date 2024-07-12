@@ -103,8 +103,13 @@ func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {
 	return err
 }
 
-func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualModel) error {
-	_, err := db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
+func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualModel, itProcessed bool, login string) error {
+	var err error
+	if itProcessed {
+		_, err = db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3; INSERT INTO orders(orders_id, login) values ($3,$4);`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID, login)
+	} else {
+		_, err = db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
+	}
 	return err
 }
 
