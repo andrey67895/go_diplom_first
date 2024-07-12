@@ -20,6 +20,7 @@ func GerAndUpdateOrderStatusByAccrual(number string) {
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}
+	defer body.Body.Close()
 	if body.StatusCode == http.StatusOK {
 		var tModel model.OrdersAccrualModel
 		err = json.NewDecoder(body.Body).Decode(&tModel)

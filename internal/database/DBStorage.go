@@ -104,7 +104,7 @@ func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {
 }
 
 func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualModel) error {
-	_, err := db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderId)
+	_, err := db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
 	return err
 }
 
