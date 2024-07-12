@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/andrey67895/go_diplom_first/internal/database"
@@ -33,8 +34,13 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
+	tOrders := *orders
 
-	marshal, err := json.Marshal(orders)
+	sort.Slice(tOrders, func(i, j int) bool {
+		return tOrders[i].UploadedAT.After(*tOrders[j].UploadedAT)
+	})
+
+	marshal, err := json.Marshal(tOrders)
 	if err != nil {
 		http.Error(w, "Ошибка записи ответа", http.StatusNotFound)
 		return
