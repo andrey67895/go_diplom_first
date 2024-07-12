@@ -110,12 +110,18 @@ func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualMode
 		if err != nil {
 			return fmt.Errorf("begin transaction: %w", err)
 		}
-		tx.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
-		tx.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, login, ordersAccrualModel.Accrual)
-		err = tx.Commit()
+		_, err = tx.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
+		_, err = tx.ExecContext(db.ctx, `INSERT IN5TO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, login, ordersAccrualModel.Accrual)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		err = tx.Commit()
+		return err
 	} else {
 		_, err = db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
 	}
