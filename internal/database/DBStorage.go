@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/andrey67895/go_diplom_first/internal/config"
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 	"github.com/andrey67895/go_diplom_first/internal/model"
-
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -106,15 +106,17 @@ func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {
 func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualModel, itProcessed bool, login string) error {
 	var err error
 	if itProcessed {
-		_, err = db.DB.ExecContext(db.ctx, `
-			DO
-			$body$
-			BEGIN
-				UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3; 
-				INSERT INTO current_balance as ca (login, current) values ($4,$1) on conflict (login) do update set current = (EXCLUDED.current  + ca."current");
-			END;
-			$body$
-			LANGUAGE 'plpgsql';`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID, login)
+		tx, err := db.DB.Begin()
+		if err != nil {
+			return fmt.Errorf("begin transaction: %w", err)
+		}
+		tx.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
+		tx.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, login, ordersAccrualModel.Accrual)
+		err = tx.Commit()
+		if err != nil {
+			return err
+		}
+
 	} else {
 		_, err = db.DB.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
 	}
