@@ -5,13 +5,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func GetRoutersAccrual() *chi.Mux {
-	r := chi.NewRouter()
-	r.Use(middleware.RealIP, middleware.Recoverer, middleware.Logger)
-	r.Get("/api/user/orders", GetOrders)
-	return r
-}
-
 func GetRoutersGophermart() *chi.Mux {
 	r := chi.NewRouter()
 
