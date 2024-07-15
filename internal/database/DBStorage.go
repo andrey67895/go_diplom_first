@@ -148,11 +148,25 @@ func (db DBStorageModel) GetCurrentBalanceByLogin(login string) (*model.CurrentB
 	return &data, nil
 }
 
-func (db DBStorageModel) GetWithdrawnBalanceByLogin(login string) (*model.WithdrawnBalanceModel, error) {
-	var data model.WithdrawnBalanceModel
-	rows := db.DB.QueryRowContext(db.ctx, "SELECT * from withdrawn_balance where login = $1", login)
-	err := rows.Scan(&data.Login, &data.Withdrawn)
-	if errors.Join(rows.Err(), err) != nil {
+func (db DBStorageModel) GetWithdrawnBalanceByLogin(login string) (*[]model.WithdrawnBalanceModel, error) {
+	data := make([]model.WithdrawnBalanceModel, 0)
+
+	rows, err := db.DB.QueryContext(db.ctx, "SELECT * from withdrawn_balance where login = $1", login)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v model.WithdrawnBalanceModel
+		err = rows.Scan(&v.Login, &v.Order, &v.ProcessedAT, &v.Withdrawn)
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, v)
+	}
+
+	err = rows.Err()
+	if err != nil {
 		return nil, err
 	}
 	return &data, nil

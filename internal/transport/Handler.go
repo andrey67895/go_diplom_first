@@ -14,6 +14,46 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
+func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
+	cookie, err := req.Cookie("Token")
+	if err != nil {
+		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
+		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
+		return
+	}
+	login := helpers.DecodeJWT(cookie.Value)
+
+	withdrawnHistory, err := database.DBStorage.GetWithdrawnBalanceByLogin(login)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+		return
+
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if len(*withdrawnHistory) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	tOrders := *withdrawnHistory
+
+	sort.Slice(tOrders, func(i, j int) bool {
+		return tOrders[i].ProcessedAT.After(*tOrders[j].ProcessedAT)
+	})
+
+	marshal, err := json.Marshal(tOrders)
+	if err != nil {
+		http.Error(w, "Ошибка записи ответа", http.StatusNotFound)
+		return
+	}
+	_, errWrite := w.Write(marshal)
+	if errWrite != nil {
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, err := req.Cookie("Token")
 	if err != nil {
