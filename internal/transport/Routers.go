@@ -14,7 +14,7 @@ func GetRoutersGophermart() *chi.Mux {
 	r.Post("/api/user/orders", SaveOrders)
 	r.Get("/api/user/orders", GetOrders)
 	r.Get("/api/user/balance", GetBalance)
-	//r.Post("/api/user/balance/withdraw", handlers.GetPing(iStorage))
+	r.Post("/api/user/balance/withdraw", WithdrawBalance)
 	//r.Get("/api/user/withdrawals", handlers.GetAllData(iStorage))
 	return r
 }

@@ -168,13 +168,39 @@ func (db DBStorageModel) GetWithdrawnBalanceSumByLogin(login string) (*float64, 
 	return &data, nil
 }
 
+func (db DBStorageModel) WithdrawnBalanceSumByLogin(withdrawnBalanceModel model.WithdrawnBalanceModel) error {
+	tx, err := db.DB.Begin()
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	_, err = tx.ExecContext(db.ctx, `INSERT INTO withdrawn_balance as wb (login, order, withdrawn) values ($1,$2, $3)`, withdrawnBalanceModel.Login, withdrawnBalanceModel.Order, withdrawnBalanceModel.ProcessedAT)
+	if err != nil {
+		err := tx.Rollback()
+		if err != nil {
+			return err
+		}
+		return err
+	}
+	_, err = tx.ExecContext(db.ctx, `UPDATE current_balance as cb SET current = (cb.current-$1) WHERE login=$2`, withdrawnBalanceModel.Withdrawn, withdrawnBalanceModel.Login)
+	if err != nil {
+		err := tx.Rollback()
+		if err != nil {
+			return err
+		}
+		return err
+	}
+
+	err = tx.Commit()
+	return err
+}
+
 func (db DBStorageModel) CreateOrUpdateCurrentBalance(currentBalanceModel model.CurrentBalanceModel) error {
 	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, *currentBalanceModel.Login, *currentBalanceModel.Balance)
 	return err
 }
 
 func (db DBStorageModel) InitTable(ctx context.Context) {
-	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS auth; DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS withdrawn_balance; DROP TABLE IF EXISTS current_balance;`)
+	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS withdrawn_balance; DROP TABLE IF EXISTS current_balance; DROP TABLE IF EXISTS auth;`)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}
@@ -184,16 +210,18 @@ func (db DBStorageModel) InitTable(ctx context.Context) {
         	"hash_pass" text not null);
 		CREATE TABLE orders (
 			"orders_id" varchar primary key,
-			"login" text not null,
+			"login" text not null REFERENCES auth (login),
 			"accrual"  double precision,
-			"status" text not null default 'NEW',
+			"status" text not null default 'NEW', CHECK (status in ('NEW', 'PROCESSING', 'INVALID', 'PROCESSED')),
 			"uploaded_at" timestamp not null default now());
 		CREATE TABLE withdrawn_balance (
-			"login" varchar,
-			"withdrawn" double precision not null);
+			"login" varchar REFERENCES auth (login),
+			"order" varchar,
+			"processed_at" timestamp not null default now(),
+			"withdrawn" double precision not null, CHECK (withdrawn > 0));
 		CREATE TABLE current_balance (
-			"login" varchar primary key,
-			"current" double precision not null);
+			"login" varchar primary key REFERENCES auth (login),
+			"current" double precision not null, CHECK (current >= 0));
 		CREATE INDEX withdrawn_login_idx ON withdrawn_balance (login);
 	`)
 	if err != nil {

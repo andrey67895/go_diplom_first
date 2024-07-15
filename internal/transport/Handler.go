@@ -14,6 +14,45 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
+func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
+	cookie, err := req.Cookie("Token")
+	if err != nil {
+		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
+		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
+		return
+	}
+	login := helpers.DecodeJWT(cookie.Value)
+	var tModel model.WithdrawnBalanceModel
+	err = json.NewDecoder(req.Body).Decode(&tModel)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		return
+	}
+	orderID, err := strconv.Atoi(*tModel.Order)
+	if !helpers.LuhnValid(orderID) || err != nil {
+		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
+		return
+	}
+
+	currentBalanceModel, err := database.DBStorage.GetCurrentBalanceByLogin(login)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if *currentBalanceModel.Balance < *tModel.Withdrawn {
+		http.Error(w, "На счету недостаточно средств", http.StatusPaymentRequired)
+		return
+	}
+	err = database.DBStorage.WithdrawnBalanceSumByLogin(model.WithdrawnBalanceModel{Login: &login, Order: tModel.Order, Withdrawn: tModel.Withdrawn})
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func GetBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, err := req.Cookie("Token")
 	if err != nil {
