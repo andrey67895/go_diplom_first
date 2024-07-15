@@ -175,18 +175,12 @@ func (db DBStorageModel) WithdrawnBalanceSumByLogin(withdrawnBalanceModel model.
 	}
 	_, err = tx.ExecContext(db.ctx, `INSERT INTO withdrawn_balance as wb (login, order, withdrawn) values ($1,$2, $3)`, withdrawnBalanceModel.Login, withdrawnBalanceModel.Order, withdrawnBalanceModel.ProcessedAT)
 	if err != nil {
-		err := tx.Rollback()
-		if err != nil {
-			return err
-		}
+		tx.Rollback()
 		return err
 	}
 	_, err = tx.ExecContext(db.ctx, `UPDATE current_balance as cb SET current = (cb.current-$1) WHERE login=$2`, withdrawnBalanceModel.Withdrawn, withdrawnBalanceModel.Login)
 	if err != nil {
-		err := tx.Rollback()
-		if err != nil {
-			return err
-		}
+		tx.Rollback()
 		return err
 	}
 
