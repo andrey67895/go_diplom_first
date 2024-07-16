@@ -113,13 +113,7 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(marshal)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	w.Write(marshal)
 }
 
 func GetOrders(w http.ResponseWriter, req *http.Request) {
