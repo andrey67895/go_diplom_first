@@ -60,7 +60,7 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	marshal, err := json.Marshal(orders)
-	helpers.TLog.Info("NENENE ::: ", marshal)
+	helpers.TLog.Info("NENENE ::: ", string(marshal))
 	if err != nil {
 		http.Error(w, "Ошибка записи ответа", http.StatusInternalServerError)
 		return
@@ -75,6 +75,7 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 	orderID := services.GetOrderIDAndValid(w, req)
 	tModel := model.OrdersModel{OrdersID: &orderID, Login: &login}
 	orders := services.GetOrderByOrderIDOrCreate(tModel, w)
+	helpers.TLog.Info("QWQWQWQWQW ::: ", *tModel.Login, " ;;; ", *tModel.OrdersID)
 	if orders != nil {
 		orders.IsConflictByLogin(login, w)
 	}
