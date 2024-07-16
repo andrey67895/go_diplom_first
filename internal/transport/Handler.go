@@ -15,13 +15,8 @@ import (
 )
 
 func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
-	cookie, err := req.Cookie("Token")
-	if err != nil {
-		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
-		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
-		return
-	}
-	login := helpers.DecodeJWT(cookie.Value)
+	cookie, _ := req.Cookie("Token")
+	login, _ := helpers.DecodeJWT(cookie.Value)
 
 	withdrawnHistory, err := database.DBStorage.GetWithdrawnBalanceByLogin(login)
 	if err != nil {
@@ -55,15 +50,10 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 }
 
 func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
-	cookie, err := req.Cookie("Token")
-	if err != nil {
-		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
-		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
-		return
-	}
-	login := helpers.DecodeJWT(cookie.Value)
+	cookie, _ := req.Cookie("Token")
+	login, _ := helpers.DecodeJWT(cookie.Value)
 	var tModel model.WithdrawnBalanceModel
-	err = json.NewDecoder(req.Body).Decode(&tModel)
+	err := json.NewDecoder(req.Body).Decode(&tModel)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		return
@@ -94,18 +84,19 @@ func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetBalance(w http.ResponseWriter, req *http.Request) {
-	cookie, err := req.Cookie("Token")
-	if err != nil {
-		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
-		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
-		return
-	}
-	login := helpers.DecodeJWT(cookie.Value)
+	cookie, _ := req.Cookie("Token")
+	login, _ := helpers.DecodeJWT(cookie.Value)
 	currentBalanceModel, err := database.DBStorage.GetCurrentBalanceByLogin(login)
+
 	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if errors.Is(err, sql.ErrNoRows) {
+			tFloat := 0.0
+			currentBalanceModel = &model.CurrentBalanceModel{Balance: &tFloat, Login: &login}
+		} else {
+			helpers.TLog.Error(err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 	withdrawnBalanceSum, err := database.DBStorage.GetWithdrawnBalanceSumByLogin(login)
 	if err != nil {
@@ -132,13 +123,8 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 }
 
 func GetOrders(w http.ResponseWriter, req *http.Request) {
-	cookie, err := req.Cookie("Token")
-	if err != nil {
-		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
-		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
-		return
-	}
-	login := helpers.DecodeJWT(cookie.Value)
+	cookie, _ := req.Cookie("Token")
+	login, _ := helpers.DecodeJWT(cookie.Value)
 
 	orders, err := database.DBStorage.GetOrdersByLogin(login)
 	if err != nil {
@@ -171,13 +157,8 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 }
 
 func SaveOrders(w http.ResponseWriter, req *http.Request) {
-	cookie, err := req.Cookie("Token")
-	if err != nil {
-		helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")
-		http.Error(w, "Пользователь не аутентифицирован!", http.StatusUnauthorized)
-		return
-	}
-	login := helpers.DecodeJWT(cookie.Value)
+	cookie, _ := req.Cookie("Token")
+	login, _ := helpers.DecodeJWT(cookie.Value)
 
 	b, err := io.ReadAll(req.Body)
 	if err != nil {

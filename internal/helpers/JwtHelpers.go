@@ -13,7 +13,7 @@ type JwtToken struct {
 	Login *string
 }
 
-func DecodeJWT(tokenString string) string {
+func DecodeJWT(tokenString string) (string, error) {
 	keyFunc := func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("неожиданный метод подписи: %v", t.Header["alg"])
@@ -25,12 +25,14 @@ func DecodeJWT(tokenString string) string {
 	parsedToken, err := jwt.ParseWithClaims(tokenString, &claims, keyFunc)
 	if err != nil {
 		TLog.Error("Ошибка разбора: ", err)
+		return "", err
 	}
 
 	if !parsedToken.Valid {
 		TLog.Error("Недействительный токен")
+		return "", fmt.Errorf("Недействительный токен")
 	}
-	return claims.Subject
+	return claims.Subject, nil
 
 }
 
