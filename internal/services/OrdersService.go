@@ -26,7 +26,7 @@ func GetOrdersAndSortByLogin(login string, w http.ResponseWriter) *[]model.Order
 	return orders
 }
 
-func GetOrderIdAndValid(w http.ResponseWriter, req *http.Request) string {
+func GetOrderIDAndValid(w http.ResponseWriter, req *http.Request) string {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
@@ -48,7 +48,7 @@ func CreateOrders(tModel model.OrdersModel, w http.ResponseWriter) {
 	}
 }
 
-func GetOrderByOrderIdOrCreate(tModel model.OrdersModel, w http.ResponseWriter) *model.OrdersModel {
+func GetOrderByOrderIDOrCreate(tModel model.OrdersModel, w http.ResponseWriter) *model.OrdersModel {
 	orders, err := database.DBStorage.GetOrdersByOrderID(*tModel.OrdersID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

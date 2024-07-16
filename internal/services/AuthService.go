@@ -27,7 +27,7 @@ func GetAuth(login string, w http.ResponseWriter, create bool) *model.UserModel 
 	}
 	if auth != nil && create {
 		http.Error(w, "Пользователь уже существует", http.StatusConflict)
-	} else if auth == nil && create == false {
+	} else if auth == nil && !create {
 		http.Error(w, "неверная пара логин/пароль", http.StatusUnauthorized)
 	}
 	return auth

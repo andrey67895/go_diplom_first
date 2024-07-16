@@ -71,9 +71,9 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 func SaveOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	orderID := services.GetOrderIdAndValid(w, req)
+	orderID := services.GetOrderIDAndValid(w, req)
 	tModel := model.OrdersModel{OrdersID: &orderID, Login: &login}
-	orders := services.GetOrderByOrderIdOrCreate(tModel, w)
+	orders := services.GetOrderByOrderIDOrCreate(tModel, w)
 	if orders != nil {
 		orders.IsConflictByLogin(login, w)
 	}
