@@ -40,7 +40,7 @@ func GerAndUpdateOrderStatusByAccrual(login string, number string) {
 
 func OrdersStatusJob() {
 	for {
-		helpers.TLog.Info("Запуск проверки статусов")
+		helpers.TLog.Info("Job: Запуск проверки статусов")
 		orders, err := database.DBStorage.GetOrdersByNotFinalStatus()
 		if err != nil {
 			helpers.TLog.Error(err.Error())
@@ -49,9 +49,8 @@ func OrdersStatusJob() {
 		for _, order := range *orders {
 			GerAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
 		}
-		helpers.TLog.Info("Окончание проверки статусов")
+		helpers.TLog.Info("Job: Окончание проверки статусов")
 		time.Sleep(3 * time.Second)
-
 	}
 
 }
