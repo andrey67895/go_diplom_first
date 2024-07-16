@@ -19,25 +19,13 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
 
-	withdrawnHistory, err := database.DBStorage.GetWithdrawnBalanceByLogin(login)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
-		return
-
-	}
-	w.Header().Set("Content-Type", "application/json")
+	withdrawnHistory := services.GetWithdrawnBalanceAndSortByLogin(login, w)
 	if len(*withdrawnHistory) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	tOrders := *withdrawnHistory
-
-	sort.Slice(tOrders, func(i, j int) bool {
-		return tOrders[i].ProcessedAT.After(*tOrders[j].ProcessedAT)
-	})
-
-	marshal, err := json.Marshal(tOrders)
+	w.Header().Set("Content-Type", "application/json")
+	marshal, err := json.Marshal(withdrawnHistory)
 	if err != nil {
 		http.Error(w, "Ошибка записи ответа", http.StatusNotFound)
 		return
