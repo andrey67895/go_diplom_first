@@ -9,13 +9,13 @@ import (
 
 var notAuthURLPath = []string{"/api/user/register", "/api/user/login"}
 
-func itNotAuth(path string) bool {
+func itCheckAuth(path string) bool {
 	return !slices.Contains(notAuthURLPath, path)
 }
 
 func AuthValidate(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		if itNotAuth(r.URL.Path) {
+		if itCheckAuth(r.URL.Path) {
 			cookie, err := r.Cookie("Token")
 			if err != nil {
 				helpers.TLog.Error(err.Error() + " : пользователь не аутентифицирован!")

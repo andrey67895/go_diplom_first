@@ -31,7 +31,7 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	tModel := model.WithdrawnBalanceModelDecode(w, req)
+	tModel, _ := model.WithdrawnBalanceModelDecode(w, req.Body)
 	currentBalanceModel := services.GetCurrentBalanceByLogin(login, w)
 	currentBalanceModel.IsValidByWithdrawn(*tModel.Withdrawn, w)
 	tWithdrawnBalanceModel := model.WithdrawnBalanceModel{Login: &login, Order: tModel.Order, Withdrawn: tModel.Withdrawn}

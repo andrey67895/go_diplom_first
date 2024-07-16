@@ -45,7 +45,7 @@ func InitDB(ctx context.Context) {
 	}
 	dbStorage := DBStorageModel{DB: db, ctx: ctx}
 
-	tMigrator := migrator.MustGetNewMigrator(MigrationsFS, migrationsDir)
+	tMigrator := migrator.NewMigrator(MigrationsFS, migrationsDir)
 	helpers.TLog.Info("Запуск миграции DB")
 	err := tMigrator.ApplyMigrations(openDB())
 	if err != nil {

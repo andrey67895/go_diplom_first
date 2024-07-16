@@ -16,7 +16,7 @@ type Migrator struct {
 	srcDriver source.Driver
 }
 
-func MustGetNewMigrator(sqlFiles embed.FS, dirName string) *Migrator {
+func NewMigrator(sqlFiles embed.FS, dirName string) *Migrator {
 	d, err := iofs.New(sqlFiles, dirName)
 	if err != nil {
 		panic(err)
