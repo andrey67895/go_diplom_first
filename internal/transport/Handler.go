@@ -4,10 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"io"
 	"net/http"
-	"sort"
-	"strconv"
 
 	"github.com/andrey67895/go_diplom_first/internal/database"
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
@@ -59,25 +56,15 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 func GetOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	orders, err := database.DBStorage.GetOrdersByLogin(login)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
-		return
-
-	}
-	w.Header().Set("Content-Type", "application/json")
+	orders := services.GetOrdersAndSortByLogin(login, w)
 	if len(*orders) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	tOrders := *orders
-	sort.Slice(tOrders, func(i, j int) bool {
-		return tOrders[i].UploadedAT.After(*tOrders[j].UploadedAT)
-	})
-	marshal, err := json.Marshal(tOrders)
+	w.Header().Set("Content-Type", "application/json")
+	marshal, err := json.Marshal(orders)
 	if err != nil {
-		http.Error(w, "Ошибка записи ответа", http.StatusNotFound)
+		http.Error(w, "Ошибка записи ответа", http.StatusInternalServerError)
 		return
 	}
 	w.Write(marshal)
@@ -87,44 +74,11 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 func SaveOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-
-	b, err := io.ReadAll(req.Body)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
-		return
-	}
-	orderID, err := strconv.Atoi(string(b))
-	if !helpers.LuhnValid(orderID) || err != nil {
-		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
-		return
-	}
-	orders, err := database.DBStorage.GetOrdersByOrderID(string(b))
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			tNumber := string(b)
-			err := database.DBStorage.CreateOrders(model.OrdersModel{
-				OrdersID: &tNumber,
-				Login:    &login})
-			if err != nil {
-				helpers.TLog.Error(err.Error())
-				http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
-				return
-			}
-			w.WriteHeader(http.StatusAccepted)
-			return
-		} else {
-			helpers.TLog.Error(err.Error())
-			http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
-			return
-		}
-	}
-	if *orders.Login == login {
-		w.WriteHeader(http.StatusOK)
-		return
-	} else {
-		http.Error(w, "Номер заказа уже был загружен другим пользователем!", http.StatusConflict)
-		return
+	orderID := services.GetOrderIdAndValid(w, req)
+	tModel := model.OrdersModel{OrdersID: &orderID, Login: &login}
+	orders := services.GetOrderByOrderIdOrCreate(tModel, w)
+	if orders != nil {
+		orders.IsConflictByLogin(login, w)
 	}
 }
 
