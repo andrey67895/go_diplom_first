@@ -50,9 +50,8 @@ func OrdersStatusJob() {
 			helpers.TLog.Error(err.Error())
 			return
 		}
-		var body *http.Response
 		for _, order := range *orders {
-			body, _ = GetAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
+			body, _ := GetAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
 			if body.StatusCode == 429 {
 				i, err := strconv.Atoi(body.Header.Get("Retry-After"))
 				if err != nil {
@@ -62,6 +61,7 @@ func OrdersStatusJob() {
 			} else {
 				ticker.Reset(time.Duration(second) * time.Second)
 			}
+			body.Body.Close()
 		}
 		helpers.TLog.Info("Job: Окончание проверки статусов")
 	}
