@@ -30,3 +30,12 @@ func WithdrawnBalanceByLogin(tModel model.WithdrawnBalanceModel, w http.Response
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
+
+func GetWithdrawnBalanceSum(login string, w http.ResponseWriter) *float64 {
+	withdrawnBalanceSum, err := database.DBStorage.GetWithdrawnBalanceSumByLogin(login)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return withdrawnBalanceSum
+}

@@ -50,20 +50,8 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
 	currentBalanceModel := services.GetCurrentBalanceByLogin(login, w)
-
-	withdrawnBalanceSum, err := database.DBStorage.GetWithdrawnBalanceSumByLogin(login)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	currentAndWithdrawnModel := model.CurrentAndWithdrawnModel{Current: currentBalanceModel.Balance, Withdrawn: withdrawnBalanceSum}
-	marshal, err := json.Marshal(currentAndWithdrawnModel)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	withdrawnBalanceSum := services.GetWithdrawnBalanceSum(login, w)
+	marshal := model.CreateCurrentAndWithdrawnModelForMarshal(currentBalanceModel.Balance, withdrawnBalanceSum, w)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(marshal)
