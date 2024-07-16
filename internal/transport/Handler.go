@@ -32,7 +32,6 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Write(marshal)
 	w.WriteHeader(http.StatusOK)
-
 }
 
 func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
