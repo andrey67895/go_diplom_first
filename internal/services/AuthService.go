@@ -10,12 +10,17 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
-func GetAuth(login string, w http.ResponseWriter, create bool) *model.UserModel {
-	auth, err := database.DBStorage.GetAuth(login)
+func GetAuth(tModel model.UserModel, w http.ResponseWriter, create bool) *model.UserModel {
+	auth, err := database.DBStorage.GetAuth(*tModel.Login)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			if create {
-				helpers.CreateAndSetJWTCookieInHTTP(login, w)
+				err := database.DBStorage.CreateAuth(tModel)
+				if err != nil {
+					helpers.TLog.Error(err.Error())
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+				helpers.CreateAndSetJWTCookieInHTTP(*tModel.Login, w)
 			} else {
 				fail := "неверная пара логин/пароль"
 				helpers.TLog.Error(fail)

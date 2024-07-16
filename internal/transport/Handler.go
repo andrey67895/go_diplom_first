@@ -82,13 +82,13 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 func UserRegister(w http.ResponseWriter, req *http.Request) {
 	tModel := model.UserModelDecode(w, req)
 	tModel.IsValid(w)
-	services.GetAuth(*tModel.Login, w, true)
+	services.GetAuth(tModel, w, true)
 }
 
 func AuthUser(w http.ResponseWriter, req *http.Request) {
 	tModel := model.UserModelDecode(w, req)
 	tModel.IsValid(w)
-	auth := services.GetAuth(*tModel.Login, w, false)
+	auth := services.GetAuth(tModel, w, false)
 	if *auth.Password == helpers.EncodeHash(*tModel.Password) {
 		helpers.CreateAndSetJWTCookieInHTTP(*tModel.Login, w)
 	}
