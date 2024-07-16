@@ -26,18 +26,20 @@ func GetOrdersAndSortByLogin(login string, w http.ResponseWriter) *[]model.Order
 	return orders
 }
 
-func GetOrderIDAndValid(w http.ResponseWriter, req *http.Request) string {
+func GetOrderIDAndValid(w http.ResponseWriter, req *http.Request) *string {
 	b, err := io.ReadAll(req.Body)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
+		return nil
 	}
 	orderID, err := strconv.Atoi(string(b))
 	if !helpers.LuhnValid(orderID) || err != nil {
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
+		return nil
 	}
-
-	return string(b)
+	tOrderID := string(b)
+	return &tOrderID
 }
 
 func CreateOrders(tModel model.OrdersModel, w http.ResponseWriter) {
