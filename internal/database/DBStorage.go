@@ -3,11 +3,13 @@ package database
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/andrey67895/go_diplom_first/internal/config"
+	"github.com/andrey67895/go_diplom_first/internal/database/migrator"
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 	"github.com/andrey67895/go_diplom_first/internal/model"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -20,18 +22,36 @@ type DBStorageModel struct {
 	ctx context.Context
 }
 
-func InitDB(ctx context.Context) {
+//go:embed migrations/*.sql
+var MigrationsFS embed.FS
+
+const migrationsDir = "migrations"
+
+func openDB() *sql.DB {
 	db, err := sql.Open("pgx", config.DatabaseDsn)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}
+	return db
+}
+
+func InitDB(ctx context.Context) {
+	db := openDB()
 	tCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
-	if err = db.PingContext(tCtx); err != nil {
+	if err := db.PingContext(tCtx); err != nil {
 		helpers.TLog.Error(err.Error())
+		panic(err.Error())
 	}
 	dbStorage := DBStorageModel{DB: db, ctx: ctx}
-	dbStorage.InitTable(tCtx)
+
+	tMigrator := migrator.MustGetNewMigrator(MigrationsFS, migrationsDir)
+	helpers.TLog.Info("Запуск миграции DB")
+	err := tMigrator.ApplyMigrations(openDB())
+	if err != nil {
+		panic(err)
+	}
+	helpers.TLog.Info("Завершение миграции DB")
 	DBStorage = dbStorage
 }
 
@@ -205,34 +225,4 @@ func (db DBStorageModel) WithdrawnBalanceByLogin(withdrawnBalanceModel model.Wit
 func (db DBStorageModel) CreateOrUpdateCurrentBalance(currentBalanceModel model.CurrentBalanceModel) error {
 	_, err := db.DB.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, *currentBalanceModel.Login, *currentBalanceModel.Balance)
 	return err
-}
-
-func (db DBStorageModel) InitTable(ctx context.Context) {
-	_, err := db.DB.ExecContext(ctx, `DROP TABLE IF EXISTS orders; DROP TABLE IF EXISTS withdrawn_balance; DROP TABLE IF EXISTS current_balance; DROP TABLE IF EXISTS auth;`)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-	}
-	_, err = db.DB.ExecContext(ctx, `
-		CREATE TABLE auth (
-        	"login" text not null primary key,
-        	"hash_pass" text not null);
-		CREATE TABLE orders (
-			"orders_id" varchar primary key,
-			"login" text not null REFERENCES auth (login),
-			"accrual"  double precision,
-			"status" text not null default 'NEW', CHECK (status in ('NEW', 'PROCESSING', 'INVALID', 'PROCESSED')),
-			"uploaded_at" timestamp not null default now());
-		CREATE TABLE withdrawn_balance (
-			"login" varchar REFERENCES auth (login),
-			"order" varchar,
-			"processed_at" timestamp not null default now(),
-			"withdrawn" double precision not null, CHECK (withdrawn > 0));
-		CREATE TABLE current_balance (
-			"login" varchar primary key REFERENCES auth (login),
-			"current" double precision not null, CHECK (current >= 0));
-		CREATE INDEX withdrawn_login_idx ON withdrawn_balance (login);
-	`)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-	}
 }
