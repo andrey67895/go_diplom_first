@@ -47,7 +47,7 @@ func generateJWTAndCheckError(login string, w http.ResponseWriter) string {
 	return token
 }
 
-func CreateAndSetJWTCookieInHttp(login string, w http.ResponseWriter) {
+func CreateAndSetJWTCookieInHTTP(login string, w http.ResponseWriter) {
 	token := generateJWTAndCheckError(login, w)
 	cookie := &http.Cookie{
 		Name:     "Token",

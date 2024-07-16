@@ -15,7 +15,7 @@ func GetAuth(login string, w http.ResponseWriter, create bool) *model.UserModel 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			if create {
-				helpers.CreateAndSetJWTCookieInHttp(login, w)
+				helpers.CreateAndSetJWTCookieInHTTP(login, w)
 			} else {
 				fail := "неверная пара логин/пароль"
 				helpers.TLog.Error(fail)

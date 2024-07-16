@@ -90,6 +90,6 @@ func AuthUser(w http.ResponseWriter, req *http.Request) {
 	tModel.IsValid(w)
 	auth := services.GetAuth(*tModel.Login, w, false)
 	if *auth.Password == helpers.EncodeHash(*tModel.Password) {
-		helpers.CreateAndSetJWTCookieInHttp(*tModel.Login, w)
+		helpers.CreateAndSetJWTCookieInHTTP(*tModel.Login, w)
 	}
 }
