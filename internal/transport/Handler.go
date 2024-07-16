@@ -79,49 +79,17 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func generateJWT(login string, w http.ResponseWriter) string {
-	token, err := helpers.GenerateJWT(login)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	return token
-}
-
-func createAndSetJWTCookieInHttp(login string, w http.ResponseWriter) {
-	token := generateJWT(login, w)
-	cookie := &http.Cookie{
-		Name:     "Token",
-		Value:    token,
-		Secure:   false,
-		HttpOnly: true,
-		MaxAge:   300,
-	}
-	http.SetCookie(w, cookie)
-	w.WriteHeader(http.StatusOK)
-}
-
 func UserRegister(w http.ResponseWriter, req *http.Request) {
 	tModel := model.UserModelDecode(w, req)
 	tModel.IsValid(w)
-	auth := services.GetAuth(*tModel.Login, w)
-	if auth == nil {
-		createAndSetJWTCookieInHttp(*tModel.Login, w)
-	} else {
-		http.Error(w, "Пользователь уже существует", http.StatusConflict)
-	}
+	services.GetAuth(*tModel.Login, w, true)
 }
 
 func AuthUser(w http.ResponseWriter, req *http.Request) {
 	tModel := model.UserModelDecode(w, req)
 	tModel.IsValid(w)
-	auth := services.GetAuth(*tModel.Login, w)
-	if auth != nil {
-		if *auth.Password == helpers.EncodeHash(*tModel.Password) {
-			createAndSetJWTCookieInHttp(*tModel.Login, w)
-		} else {
-			http.Error(w, "неверная пара логин/пароль", http.StatusUnauthorized)
-		}
+	auth := services.GetAuth(*tModel.Login, w, false)
+	if *auth.Password == helpers.EncodeHash(*tModel.Password) {
+		helpers.CreateAndSetJWTCookieInHttp(*tModel.Login, w)
 	}
-
 }

@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -37,7 +38,29 @@ func DecodeJWT(tokenString string) (string, error) {
 
 }
 
-func GenerateJWT(username string) (string, error) {
+func generateJWTAndCheckError(login string, w http.ResponseWriter) string {
+	token, err := generateJWT(login)
+	if err != nil {
+		TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return token
+}
+
+func CreateAndSetJWTCookieInHttp(login string, w http.ResponseWriter) {
+	token := generateJWTAndCheckError(login, w)
+	cookie := &http.Cookie{
+		Name:     "Token",
+		Value:    token,
+		Secure:   false,
+		HttpOnly: true,
+		MaxAge:   300,
+	}
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusOK)
+}
+
+func generateJWT(username string) (string, error) {
 	var claims jwt.RegisteredClaims
 	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute * 30).UTC())
 	claims.Subject = username
