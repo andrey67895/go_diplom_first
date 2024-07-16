@@ -61,13 +61,7 @@ func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
 		return
 	}
-
-	currentBalanceModel, err := database.DBStorage.GetCurrentBalanceByLogin(login)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	currentBalanceModel := services.GetCurrentBalanceByLogin(login, w)
 	if *currentBalanceModel.Balance < *tModel.Withdrawn {
 		http.Error(w, "На счету недостаточно средств", http.StatusPaymentRequired)
 		return
@@ -84,18 +78,8 @@ func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
 func GetBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	currentBalanceModel, err := database.DBStorage.GetCurrentBalanceByLogin(login)
+	currentBalanceModel := services.GetCurrentBalanceByLogin(login, w)
 
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			tFloat := 0.0
-			currentBalanceModel = &model.CurrentBalanceModel{Balance: &tFloat, Login: &login}
-		} else {
-			helpers.TLog.Error(err.Error())
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
 	withdrawnBalanceSum, err := database.DBStorage.GetWithdrawnBalanceSumByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
