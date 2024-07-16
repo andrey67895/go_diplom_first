@@ -227,20 +227,8 @@ func UserRegister(w http.ResponseWriter, req *http.Request) {
 }
 
 func AuthUser(w http.ResponseWriter, req *http.Request) {
-	var tModel model.UserModel
-	err := json.NewDecoder(req.Body).Decode(&tModel)
-	if err != nil {
-		fail := "Ошибка десериализации! "
-		helpers.TLog.Error(fail, err.Error())
-		http.Error(w, fail, http.StatusBadRequest)
-		return
-	}
+	tModel := model.UserModelDecode(w, req)
 	tModel.IsValid(w)
-	//if err != nil {
-	//	helpers.TLog.Error(err.Error())
-	//	http.Error(w, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
 
 	auth := services.GetAuth(*tModel.Login, w)
 	if auth != nil {
