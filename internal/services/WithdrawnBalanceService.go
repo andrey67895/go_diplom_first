@@ -20,6 +20,13 @@ func GetWithdrawnBalanceAndSortByLogin(login string, w http.ResponseWriter) *[]m
 	sort.Slice(tOrders, func(i, j int) bool {
 		return tOrders[i].ProcessedAT.After(*tOrders[j].ProcessedAT)
 	})
-
 	return withdrawnHistory
+}
+
+func WithdrawnBalanceByLogin(tModel model.WithdrawnBalanceModel, w http.ResponseWriter) {
+	err := database.DBStorage.WithdrawnBalanceByLogin(tModel)
+	if err != nil {
+		helpers.TLog.Error(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

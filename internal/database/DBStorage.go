@@ -182,7 +182,7 @@ func (db DBStorageModel) GetWithdrawnBalanceSumByLogin(login string) (*float64, 
 	return &data, nil
 }
 
-func (db DBStorageModel) WithdrawnBalanceSumByLogin(withdrawnBalanceModel model.WithdrawnBalanceModel) error {
+func (db DBStorageModel) WithdrawnBalanceByLogin(withdrawnBalanceModel model.WithdrawnBalanceModel) error {
 	tx, err := db.DB.Begin()
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)

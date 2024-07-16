@@ -38,28 +38,11 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	var tModel model.WithdrawnBalanceModel
-	err := json.NewDecoder(req.Body).Decode(&tModel)
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		return
-	}
-	orderID, err := strconv.Atoi(*tModel.Order)
-	if !helpers.LuhnValid(orderID) || err != nil {
-		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
-		return
-	}
+	tModel := model.WithdrawnBalanceModelDecode(w, req)
 	currentBalanceModel := services.GetCurrentBalanceByLogin(login, w)
-	if *currentBalanceModel.Balance < *tModel.Withdrawn {
-		http.Error(w, "На счету недостаточно средств", http.StatusPaymentRequired)
-		return
-	}
-	err = database.DBStorage.WithdrawnBalanceSumByLogin(model.WithdrawnBalanceModel{Login: &login, Order: tModel.Order, Withdrawn: tModel.Withdrawn})
-	if err != nil {
-		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	currentBalanceModel.IsValidByWithdrawn(*tModel.Withdrawn, w)
+	tWithdrawnBalanceModel := model.WithdrawnBalanceModel{Login: &login, Order: tModel.Order, Withdrawn: tModel.Withdrawn}
+	services.WithdrawnBalanceByLogin(tWithdrawnBalanceModel, w)
 	w.WriteHeader(http.StatusOK)
 }
 
