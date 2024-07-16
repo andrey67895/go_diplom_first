@@ -60,6 +60,7 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	marshal, err := json.Marshal(orders)
+	helpers.TLog.Info("NENENE ::: ", marshal)
 	if err != nil {
 		http.Error(w, "Ошибка записи ответа", http.StatusInternalServerError)
 		return
