@@ -1,4 +1,4 @@
-package middleware_project
+package middlewareProject
 
 import (
 	"net/http"
@@ -7,10 +7,10 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 )
 
-var not_auth_url_path = []string{"/api/user/register", "/api/user/login"}
+var notAuthURLPath = []string{"/api/user/register", "/api/user/login"}
 
 func itNotAuth(path string) bool {
-	return !slices.Contains(not_auth_url_path, path)
+	return !slices.Contains(notAuthURLPath, path)
 }
 
 func AuthValidate(next http.Handler) http.Handler {

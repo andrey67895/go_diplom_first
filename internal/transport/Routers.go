@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"github.com/andrey67895/go_diplom_first/internal/middleware_project"
+	"github.com/andrey67895/go_diplom_first/internal/middlewareProject"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
@@ -9,7 +9,7 @@ import (
 func GetRoutersGophermart() *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Use(middleware.RealIP, middleware.Recoverer, middleware.Logger, middleware_project.AuthValidate)
+	r.Use(middleware.RealIP, middleware.Recoverer, middleware.Logger, middlewareProject.AuthValidate)
 	r.Post("/api/user/register", UserRegister)
 	r.Post("/api/user/login", AuthUser)
 	r.Post("/api/user/orders", SaveOrders)
