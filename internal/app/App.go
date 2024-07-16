@@ -12,7 +12,6 @@ import (
 )
 
 func InitServer() {
-	helpers.InitLog()
 	config.InitServerConfig()
 	database.InitDB(context.Background())
 	go services.OrdersStatusJob()
