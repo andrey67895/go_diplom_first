@@ -29,8 +29,9 @@ func DecodeJWT(tokenString string) (string, error) {
 	}
 
 	if !parsedToken.Valid {
-		TLog.Error("Недействительный токен")
-		return "", fmt.Errorf("Недействительный токен")
+		err := "недействительный токен"
+		TLog.Error(err)
+		return "", fmt.Errorf(err)
 	}
 	return claims.Subject, nil
 
