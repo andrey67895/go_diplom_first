@@ -36,7 +36,7 @@ func getMockAccrual(w http.ResponseWriter, req *http.Request) {
 	var tModel model.OrdersAccrualModel
 	if randBool() {
 		status := "PROCESSED"
-		accrual := rand.Float64() * 100000
+		accrual := 500.0
 		tModel = model.OrdersAccrualModel{
 			OrderID: &numbers,
 			Status:  &status,
