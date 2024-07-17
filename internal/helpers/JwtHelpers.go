@@ -38,7 +38,7 @@ func DecodeJWT(tokenString string) (string, error) {
 
 }
 
-func generateJWTAndCheckError(login string, w http.ResponseWriter) string {
+func GenerateJWTAndCheckError(login string, w http.ResponseWriter) string {
 	token, err := generateJWT(login)
 	if err != nil {
 		TLog.Error(err.Error())
@@ -48,7 +48,7 @@ func generateJWTAndCheckError(login string, w http.ResponseWriter) string {
 }
 
 func CreateAndSetJWTCookieInHTTP(login string, w http.ResponseWriter) {
-	token := generateJWTAndCheckError(login, w)
+	token := GenerateJWTAndCheckError(login, w)
 	cookie := &http.Cookie{
 		Name:     "Token",
 		Value:    token,
