@@ -1,6 +1,6 @@
 module github.com/andrey67895/go_diplom_first
 
-go 1.21.8
+go 1.21.12
 
 require (
 	github.com/go-chi/chi/v5 v5.1.0

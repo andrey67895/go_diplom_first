@@ -26,7 +26,7 @@ func DecodeJWT(tokenString string) (string, error) {
 	parsedToken, err := jwt.ParseWithClaims(tokenString, &claims, keyFunc)
 	if err != nil {
 		TLog.Error("Ошибка разбора: ", err)
-		return "", err
+		return "", fmt.Errorf("ошибка разбора: %s", err.Error())
 	}
 
 	if !parsedToken.Valid {
