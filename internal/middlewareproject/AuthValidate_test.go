@@ -172,6 +172,7 @@ func TestAuthValidate(t *testing.T) {
 
 				result := w.Result()
 				assert.Equal(t, test.want.code, result.StatusCode)
+				result.Body.Close()
 			}
 		})
 	}
