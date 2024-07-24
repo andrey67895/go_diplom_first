@@ -19,7 +19,7 @@ func InitServer() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(10)
 
 	config.InitServerConfig()
 	if err := database.InitDB(ctx); err != nil {
@@ -32,6 +32,6 @@ func InitServer() {
 	}()
 	select {
 	case <-ctx.Done():
-		helpers.TLog.Info("Server shutdown: лшдд", ctx.Err())
+		helpers.TLog.Info("Server shutdown: ", ctx.Err())
 	}
 }
