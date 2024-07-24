@@ -13,7 +13,11 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
 
-	withdrawnHistory := services.GetWithdrawnBalanceAndSortByLogin(login, w)
+	withdrawnHistory, err := services.GetWithdrawnBalanceAndSortByLogin(login)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if len(withdrawnHistory) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -31,20 +35,43 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 func WithdrawBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	tModel, _ := model.WithdrawnBalanceModelDecode(w, req.Body)
-	currentBalanceModel := services.GetCurrentBalanceByLogin(login, w)
-	currentBalanceModel.IsValidByWithdrawn(*tModel.Withdrawn, w)
+	tModel, err := model.WithdrawnBalanceModelDecode(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+	currentBalanceModel, err := services.GetCurrentBalanceByLogin(login)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := currentBalanceModel.IsValidByWithdrawn(*tModel.Withdrawn); err != nil {
+		http.Error(w, err.Error(), http.StatusPaymentRequired)
+		return
+	}
 	tWithdrawnBalanceModel := model.WithdrawnBalanceModel{Login: &login, Order: tModel.Order, Withdrawn: tModel.Withdrawn}
-	services.WithdrawnBalanceByLogin(tWithdrawnBalanceModel, w)
+	if err := services.WithdrawnBalanceByLogin(tWithdrawnBalanceModel); err != nil {
+		http.Error(w, err.Error(), http.StatusPaymentRequired)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
 func GetBalance(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	currentBalanceModel := services.GetCurrentBalanceByLogin(login, w)
-	withdrawnBalanceSum := services.GetWithdrawnBalanceSum(login, w)
-	marshal := model.CreateCurrentAndWithdrawnModelForMarshal(currentBalanceModel.Balance, withdrawnBalanceSum, w)
+	currentBalanceModel, err := services.GetCurrentBalanceByLogin(login)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	withdrawnBalanceSum, err := services.GetWithdrawnBalanceSum(login)
+
+	marshal, err := model.CreateCurrentAndWithdrawnModelForMarshal(currentBalanceModel.Balance, withdrawnBalanceSum)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(marshal)
@@ -53,7 +80,11 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 func GetOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	orders := services.GetOrdersAndSortByLogin(login, w)
+	orders, err := services.GetOrdersAndSortByLogin(login)
+	if err != nil {
+		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+		return
+	}
 	if len(orders) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
@@ -71,27 +102,89 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 func SaveOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
-	orderID := services.GetOrderIDAndValid(w, req)
+	orderID, err := services.GetOrderIDAndValid(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
 	if orderID != nil {
 		tModel := model.OrdersModel{OrdersID: orderID, Login: &login}
-		orders := services.GetOrderByOrderIDOrCreate(tModel, w)
-		if orders != nil {
-			orders.IsConflictByLogin(login, w)
+		orders, err := services.GetOrderByOrderIDOrCreate(tModel)
+		if err == nil {
+			http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+			return
+		} else {
+			if orders == nil {
+				w.WriteHeader(http.StatusAccepted)
+				return
+			} else {
+				if err := orders.IsConflictByLogin(login); err != nil {
+					http.Error(w, err.Error(), http.StatusConflict)
+					return
+				} else {
+					w.WriteHeader(http.StatusOK)
+				}
+			}
+
 		}
 	}
 }
 
 func UserRegister(w http.ResponseWriter, req *http.Request) {
-	tModel := model.UserModelDecode(w, req)
-	tModel.IsValid(w)
-	services.GetAuth(tModel, w, true)
+	tModel, err := model.UserModelDecode(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err := tModel.IsValid(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	_, apierr := services.GetAuth(*tModel, true)
+	if apierr != nil {
+		http.Error(w, apierr.Error.Error(), apierr.Status)
+		return
+	} else {
+		token, err := helpers.CreateTokenInHTTP(*tModel.Login)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		helpers.SetCookie(token, w)
+		w.WriteHeader(http.StatusOK)
+	}
+
 }
 
 func AuthUser(w http.ResponseWriter, req *http.Request) {
-	tModel := model.UserModelDecode(w, req)
-	tModel.IsValid(w)
-	auth := services.GetAuth(tModel, w, false)
-	if *auth.Password == helpers.EncodeHash(*tModel.Password) {
-		helpers.CreateAndSetJWTCookieInHTTP(*tModel.Login, w)
+	tModel, err := model.UserModelDecode(req.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
+	if err := tModel.IsValid(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	auth, apierr := services.GetAuth(*tModel, false)
+
+	if apierr != nil {
+		http.Error(w, apierr.Error.Error(), apierr.Status)
+		return
+	} else {
+		if *auth.Password == helpers.EncodeHash(*tModel.Password) {
+			token, err := helpers.CreateTokenInHTTP(*tModel.Login)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
+			}
+			helpers.SetCookie(token, w)
+			w.WriteHeader(http.StatusOK)
+		} else {
+			http.Error(w, "Ошибка авторизации", http.StatusUnauthorized)
+			return
+		}
+
+	}
+
 }

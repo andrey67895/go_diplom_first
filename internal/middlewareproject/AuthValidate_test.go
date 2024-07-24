@@ -159,7 +159,7 @@ func TestAuthValidate(t *testing.T) {
 				if test.args.auth {
 					var token string
 					if test.args.valid {
-						token = helpers.GenerateJWTAndCheckError("TEST", w)
+						token, _ = helpers.GenerateJWTAndCheckError("TEST")
 					} else {
 						token = "QWERTY"
 					}

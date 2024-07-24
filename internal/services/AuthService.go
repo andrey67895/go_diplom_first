@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/andrey67895/go_diplom_first/internal/database"
@@ -10,7 +11,7 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
-func GetAuth(tModel model.UserModel, w http.ResponseWriter, create bool) *model.UserModel {
+func GetAuth(tModel model.UserModel, create bool) (*model.UserModel, *model.ApiError) {
 	auth, err := database.DBStorage.GetAuth(*tModel.Login)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -18,22 +19,35 @@ func GetAuth(tModel model.UserModel, w http.ResponseWriter, create bool) *model.
 				err := database.DBStorage.CreateAuth(tModel)
 				if err != nil {
 					helpers.TLog.Error(err.Error())
-					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return nil, &model.ApiError{
+						Status: http.StatusInternalServerError,
+						Error:  err,
+					}
 				}
-				helpers.CreateAndSetJWTCookieInHTTP(*tModel.Login, w)
 			} else {
-				fail := "неверная пара логин/пароль"
-				helpers.TLog.Error(fail)
-				http.Error(w, fail, http.StatusUnauthorized)
+				err := fmt.Errorf("неверная пара логин/пароль")
+				helpers.TLog.Error(err.Error())
+				return nil, &model.ApiError{
+					Status: http.StatusUnauthorized,
+					Error:  err,
+				}
 			}
 		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return nil, &model.ApiError{
+				Status: http.StatusInternalServerError,
+				Error:  err,
+			}
 		}
 	}
 	if auth != nil && create {
-		http.Error(w, "Пользователь уже существует", http.StatusConflict)
+		return nil, &model.ApiError{Status: http.StatusConflict,
+			Error: fmt.Errorf("пользователь уже существует"),
+		}
 	} else if auth == nil && !create {
-		http.Error(w, "неверная пара логин/пароль", http.StatusUnauthorized)
+		return nil, &model.ApiError{
+			Status: http.StatusUnauthorized,
+			Error:  fmt.Errorf("неверная пара логин/пароль"),
+		}
 	}
-	return auth
+	return auth, nil
 }

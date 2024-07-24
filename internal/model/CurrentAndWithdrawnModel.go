@@ -2,7 +2,6 @@ package model
 
 import (
 	"encoding/json"
-	"net/http"
 
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 )
@@ -12,17 +11,17 @@ type CurrentAndWithdrawnModel struct {
 	Withdrawn *float64 `json:"withdrawn"`
 }
 
-func CreateCurrentAndWithdrawnModelForMarshal(current *float64, withdrawn *float64, w http.ResponseWriter) []byte {
+func CreateCurrentAndWithdrawnModelForMarshal(current *float64, withdrawn *float64) ([]byte, error) {
 	currentAndWithdrawnModel := CurrentAndWithdrawnModel{Current: current, Withdrawn: withdrawn}
-	marshal := currentAndWithdrawnModel.marshal(w)
-	return marshal
+	marshal, err := currentAndWithdrawnModel.marshal()
+	return marshal, err
 }
 
-func (c CurrentAndWithdrawnModel) marshal(w http.ResponseWriter) []byte {
+func (c CurrentAndWithdrawnModel) marshal() ([]byte, error) {
 	marshal, err := json.Marshal(c)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, err
 	}
-	return marshal
+	return marshal, nil
 }

@@ -3,8 +3,8 @@ package services
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
-	"net/http"
 	"sort"
 	"strconv"
 
@@ -13,54 +13,55 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
-func GetOrdersAndSortByLogin(login string, w http.ResponseWriter) []*model.OrdersModel {
+func GetOrdersAndSortByLogin(login string) ([]*model.OrdersModel, error) {
 	orders, err := database.DBStorage.GetOrdersByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+		return nil, err
 	}
 	sort.Slice(orders, func(i, j int) bool {
 		return orders[i].UploadedAT.After(*orders[j].UploadedAT)
 	})
-	return orders
+	return orders, nil
 }
 
-func GetOrderIDAndValid(w http.ResponseWriter, req *http.Request) *string {
-	b, err := io.ReadAll(req.Body)
+func GetOrderIDAndValid(body io.ReadCloser) (*string, error) {
+	b, err := io.ReadAll(body)
 	if err != nil {
+		err := fmt.Errorf("неверный формат номера заказа! %s", err.Error())
 		helpers.TLog.Error(err.Error())
-		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
-		return nil
+		return nil, err
 	}
 	orderID, err := strconv.Atoi(string(b))
 	if !helpers.LuhnValid(orderID) || err != nil {
-		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
-		return nil
+		err := fmt.Errorf("неверный формат номера заказа")
+		return nil, err
 	}
 	tOrderID := string(b)
-	return &tOrderID
+	return &tOrderID, nil
 }
 
-func CreateOrders(tModel model.OrdersModel, w http.ResponseWriter) {
+func CreateOrders(tModel model.OrdersModel) error {
 	err := database.DBStorage.CreateOrders(tModel)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
+		return err
 	}
+	return nil
 }
 
-func GetOrderByOrderIDOrCreate(tModel model.OrdersModel, w http.ResponseWriter) *model.OrdersModel {
+func GetOrderByOrderIDOrCreate(tModel model.OrdersModel) (*model.OrdersModel, error) {
 	orders, err := database.DBStorage.GetOrdersByOrderID(*tModel.OrdersID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			CreateOrders(tModel, w)
-			w.WriteHeader(http.StatusAccepted)
-			return nil
+			if err := CreateOrders(tModel); err != nil {
+				return nil, err
+			}
+			return nil, nil
 		} else {
 			helpers.TLog.Error(err.Error())
-			http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
-			return nil
+			return nil, err
 		}
 	}
-	return orders
+	return orders, nil
 }

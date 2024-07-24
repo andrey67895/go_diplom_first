@@ -1,7 +1,7 @@
 package services
 
 import (
-	"net/http"
+	"fmt"
 	"sort"
 
 	"github.com/andrey67895/go_diplom_first/internal/database"
@@ -9,32 +9,32 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
-func GetWithdrawnBalanceAndSortByLogin(login string, w http.ResponseWriter) []*model.WithdrawnBalanceModel {
+func GetWithdrawnBalanceAndSortByLogin(login string) ([]*model.WithdrawnBalanceModel, error) {
 	withdrawnHistory, err := database.DBStorage.GetWithdrawnBalanceByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
-
+		return nil, fmt.Errorf("ошибка сервера: %s", err.Error())
 	}
 	sort.Slice(withdrawnHistory, func(i, j int) bool {
 		return withdrawnHistory[i].ProcessedAT.After(*withdrawnHistory[j].ProcessedAT)
 	})
-	return withdrawnHistory
+	return withdrawnHistory, nil
 }
 
-func WithdrawnBalanceByLogin(tModel model.WithdrawnBalanceModel, w http.ResponseWriter) {
+func WithdrawnBalanceByLogin(tModel model.WithdrawnBalanceModel) error {
 	err := database.DBStorage.WithdrawnBalanceByLogin(tModel)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
 	}
+	return nil
 }
 
-func GetWithdrawnBalanceSum(login string, w http.ResponseWriter) *float64 {
+func GetWithdrawnBalanceSum(login string) (*float64, error) {
 	withdrawnBalanceSum, err := database.DBStorage.GetWithdrawnBalanceSumByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil, err
 	}
-	return withdrawnBalanceSum
+	return withdrawnBalanceSum, nil
 }

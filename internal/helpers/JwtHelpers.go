@@ -38,17 +38,25 @@ func DecodeJWT(tokenString string) (string, error) {
 
 }
 
-func GenerateJWTAndCheckError(login string, w http.ResponseWriter) string {
+func GenerateJWTAndCheckError(login string) (string, error) {
 	token, err := generateJWT(login)
 	if err != nil {
 		TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return "", err
 	}
-	return token
+	return token, nil
 }
 
-func CreateAndSetJWTCookieInHTTP(login string, w http.ResponseWriter) {
-	token := GenerateJWTAndCheckError(login, w)
+func CreateTokenInHTTP(login string) (string, error) {
+	token, err := GenerateJWTAndCheckError(login)
+	if err != nil {
+		return "", err
+	}
+
+	return token, nil
+}
+
+func SetCookie(token string, w http.ResponseWriter) {
 	cookie := &http.Cookie{
 		Name:     "Token",
 		Value:    token,
@@ -57,7 +65,6 @@ func CreateAndSetJWTCookieInHTTP(login string, w http.ResponseWriter) {
 		MaxAge:   300,
 	}
 	http.SetCookie(w, cookie)
-	w.WriteHeader(http.StatusOK)
 }
 
 func generateJWT(username string) (string, error) {

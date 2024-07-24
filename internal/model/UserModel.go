@@ -3,7 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
+	"io"
 
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 )
@@ -13,19 +13,21 @@ type UserModel struct {
 	Password *string `json:"password"`
 }
 
-func UserModelDecode(w http.ResponseWriter, r *http.Request) UserModel {
+func UserModelDecode(body io.ReadCloser) (*UserModel, error) {
 	var tModel UserModel
-	err := json.NewDecoder(r.Body).Decode(&tModel)
+	err := json.NewDecoder(body).Decode(&tModel)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, "Ошибка десериализации!", http.StatusBadRequest)
+		return nil, fmt.Errorf("ошибка десериализации")
 	}
-	return tModel
+	return &tModel, nil
 }
 
-func (u UserModel) IsValid(w http.ResponseWriter) {
+func (u UserModel) IsValid() error {
 	if u.Login == nil || u.Password == nil || *u.Login == "" || *u.Password == "" {
-		helpers.TLog.Error(fmt.Errorf("ошибка валидации! Обязательные поля: password и login, не могут быть пустыми или null: %+v", u).Error())
-		http.Error(w, fmt.Errorf("ошибка валидации! Обязательные поля: password и login, не могут быть пустыми или null: %+v", u).Error(), http.StatusBadRequest)
+		err := fmt.Errorf("ошибка валидации! Обязательные поля: password и login, не могут быть пустыми или null: %+v", u)
+		helpers.TLog.Error(err.Error())
+		return err
 	}
+	return nil
 }

@@ -44,7 +44,7 @@ func TestWithdrawnBalanceModelDecodePositive(t *testing.T) {
 			w := httptest.NewRecorder()
 			tModel := WithdrawnBalanceModel{Order: &test.args.order, Withdrawn: &test.args.withdrawn}
 			body := io.NopCloser(bytes.NewReader(tModel.Marshal()))
-			got, err := WithdrawnBalanceModelDecode(w, body)
+			got, err := WithdrawnBalanceModelDecode(body)
 			res := w.Result()
 			defer res.Body.Close()
 			assert.Equal(t, nil, err)
@@ -57,7 +57,6 @@ func TestWithdrawnBalanceModelDecodePositive(t *testing.T) {
 
 func TestWithdrawnBalanceModelDecodeNegative(t *testing.T) {
 	type want struct {
-		code      int
 		errorText *string
 	}
 	type args struct {
@@ -77,21 +76,16 @@ func TestWithdrawnBalanceModelDecodeNegative(t *testing.T) {
 				withdrawn: 100,
 			},
 			want: want{
-				code:      422,
-				errorText: helpers.GetAdrressString("Неверный формат номера заказа!"),
+				errorText: helpers.GetAdrressString("неверный формат запроса"),
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			w := httptest.NewRecorder()
 			tModel := WithdrawnBalanceModel{Order: &test.args.order, Withdrawn: &test.args.withdrawn}
 			body := io.NopCloser(bytes.NewReader(tModel.Marshal()))
-			_, err := WithdrawnBalanceModelDecode(w, body)
-			res := w.Result()
-			defer res.Body.Close()
-			assert.Equal(t, nil, err)
-			assert.Equal(t, test.want.code, res.StatusCode)
+			_, err := WithdrawnBalanceModelDecode(body)
+			assert.Equal(t, *test.want.errorText, err.Error())
 		})
 	}
 }

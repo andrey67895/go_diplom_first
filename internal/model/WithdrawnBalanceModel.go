@@ -2,8 +2,8 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -22,22 +22,21 @@ func (tModel WithdrawnBalanceModel) Marshal() []byte {
 	return marshal
 }
 
-func WithdrawnBalanceModelDecode(w http.ResponseWriter, body io.ReadCloser) (*WithdrawnBalanceModel, error) {
+func WithdrawnBalanceModelDecode(body io.ReadCloser) (*WithdrawnBalanceModel, error) {
 	var tModel WithdrawnBalanceModel
 	err := json.NewDecoder(body).Decode(&tModel)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
 		return nil, err
 	}
 	if tModel.Order == nil {
-		http.Error(w, "Неверный формат запроса!", http.StatusUnprocessableEntity)
-		return nil, err
+		err := fmt.Errorf("неверный формат запроса! %s", err.Error())
+		return &tModel, err
 	}
 	orderID, err := strconv.Atoi(*tModel.Order)
 	if !helpers.LuhnValid(orderID) || err != nil {
-		http.Error(w, "Неверный формат номера заказа!", http.StatusUnprocessableEntity)
-		return nil, err
+		err := fmt.Errorf("неверный формат запроса")
+		return &tModel, err
 	}
 	return &tModel, nil
 }

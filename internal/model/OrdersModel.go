@@ -1,7 +1,7 @@
 package model
 
 import (
-	"net/http"
+	"fmt"
 	"time"
 )
 
@@ -13,10 +13,9 @@ type OrdersModel struct {
 	UploadedAT *time.Time `json:"uploaded_at"`
 }
 
-func (o OrdersModel) IsConflictByLogin(login string, w http.ResponseWriter) {
-	if *o.Login == login {
-		w.WriteHeader(http.StatusOK)
-	} else {
-		http.Error(w, "Номер заказа уже был загружен другим пользователем!", http.StatusConflict)
+func (o OrdersModel) IsConflictByLogin(login string) error {
+	if *o.Login != login {
+		return fmt.Errorf("номер заказа уже был загружен другим пользователем")
 	}
+	return nil
 }
