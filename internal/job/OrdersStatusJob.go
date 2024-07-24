@@ -1,9 +1,11 @@
 package job
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/andrey67895/go_diplom_first/internal/config"
@@ -40,29 +42,62 @@ func GetAndUpdateOrderStatusByAccrual(login string, number string) (*http.Respon
 	return body, nil
 }
 
-func OrdersStatusJob() {
+func OrdersStatusJob(ctx context.Context, wg *sync.WaitGroup) {
 	second := 1
 	ticker := time.NewTicker(time.Duration(second) * time.Second)
-	for range ticker.C {
-		helpers.TLog.Info("Job: Запуск проверки статусов")
-		orders, err := database.DBStorage.GetOrdersByNotFinalStatus()
-		if err != nil {
-			helpers.TLog.Error(err.Error())
-			return
-		}
-		for _, order := range orders {
-			body, _ := GetAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
-			if body.StatusCode == 429 {
-				i, err := strconv.Atoi(body.Header.Get("Retry-After"))
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-ctx.Done():
+				helpers.TLog.Info("Job: Завершение работы")
+				return
+			case <-ticker.C:
+				helpers.TLog.Info("Job: Запуск проверки статусов")
+				orders, err := database.DBStorage.GetOrdersByNotFinalStatus()
 				if err != nil {
 					helpers.TLog.Error(err.Error())
+					return
 				}
-				ticker.Reset(time.Duration(i) * time.Second)
-			} else {
-				ticker.Reset(time.Duration(second) * time.Second)
+				for _, order := range orders {
+					body, _ := GetAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
+					if body.StatusCode == 429 {
+						i, err := strconv.Atoi(body.Header.Get("Retry-After"))
+						if err != nil {
+							helpers.TLog.Error(err.Error())
+						}
+						ticker.Reset(time.Duration(i) * time.Second)
+					} else {
+						ticker.Reset(time.Duration(second) * time.Second)
+					}
+					body.Body.Close()
+				}
+				helpers.TLog.Info("Job: Окончание проверки статусов")
+
 			}
-			body.Body.Close()
 		}
-		helpers.TLog.Info("Job: Окончание проверки статусов")
-	}
+	}()
+
+	//for range ticker.C {
+	//	helpers.TLog.Info("Job: Запуск проверки статусов")
+	//	orders, err := database.DBStorage.GetOrdersByNotFinalStatus()
+	//	if err != nil {
+	//		helpers.TLog.Error(err.Error())
+	//		return
+	//	}
+	//	for _, order := range orders {
+	//		body, _ := GetAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
+	//		if body.StatusCode == 429 {
+	//			i, err := strconv.Atoi(body.Header.Get("Retry-After"))
+	//			if err != nil {
+	//				helpers.TLog.Error(err.Error())
+	//			}
+	//			ticker.Reset(time.Duration(i) * time.Second)
+	//		} else {
+	//			ticker.Reset(time.Duration(second) * time.Second)
+	//		}
+	//		body.Body.Close()
+	//	}
+	//	helpers.TLog.Info("Job: Окончание проверки статусов")
+	//}
 }

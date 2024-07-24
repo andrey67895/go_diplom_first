@@ -3,6 +3,10 @@ package app
 import (
 	"context"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/andrey67895/go_diplom_first/internal/config"
 	"github.com/andrey67895/go_diplom_first/internal/database"
@@ -12,10 +16,22 @@ import (
 )
 
 func InitServer() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	var wg sync.WaitGroup
+	wg.Add(2)
+
 	config.InitServerConfig()
-	if err := database.InitDB(context.Background()); err != nil {
+	if err := database.InitDB(ctx); err != nil {
 		helpers.TLog.Fatal(err)
 	}
-	go job.OrdersStatusJob()
-	helpers.TLog.Fatal(http.ListenAndServe(config.RunAddress, transport.GetRoutersGophermart()))
+	job.OrdersStatusJob(ctx, &wg)
+	go func() {
+		defer wg.Done()
+		helpers.TLog.Fatal(http.ListenAndServe(config.RunAddress, transport.GetRoutersGophermart()))
+	}()
+	select {
+	case <-ctx.Done():
+		helpers.TLog.Info("Server shutdown: лшдд", ctx.Err())
+	}
 }
