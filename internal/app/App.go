@@ -25,9 +25,9 @@ func InitServer() {
 	if err := database.InitDB(ctx); err != nil {
 		helpers.TLog.Fatal(err)
 	}
-	job.OrdersStatusJob(ctx, &wg)
 	go func() {
 		defer wg.Done()
+		job.OrdersStatusJob(ctx, &wg)
 		helpers.TLog.Fatal(http.ListenAndServe(config.RunAddress, transport.GetRoutersGophermart()))
 	}()
 	select {
