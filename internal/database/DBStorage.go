@@ -37,10 +37,12 @@ func openDB() (*sql.DB, error) {
 
 func InitDB(ctx context.Context) error {
 	db, err := openDB()
+	if err != nil {
+		return err
+	}
 	tCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 	if err := db.PingContext(tCtx); err != nil {
-		helpers.TLog.Error(err.Error())
 		return err
 	}
 	dbStorage := DBStorageModel{DB: db, ctx: ctx}
