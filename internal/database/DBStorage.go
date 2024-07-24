@@ -27,32 +27,37 @@ var MigrationsFS embed.FS
 
 const migrationsDir = "migrations"
 
-func openDB() *sql.DB {
+func openDB() (*sql.DB, error) {
 	db, err := sql.Open("pgx", config.DatabaseDsn)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}
-	return db
+	return db, err
 }
 
-func InitDB(ctx context.Context) {
-	db := openDB()
+func InitDB(ctx context.Context) error {
+	db, err := openDB()
 	tCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 	if err := db.PingContext(tCtx); err != nil {
 		helpers.TLog.Error(err.Error())
-		panic(err.Error())
+		return err
 	}
 	dbStorage := DBStorageModel{DB: db, ctx: ctx}
 
 	tMigrator := migrator.NewMigrator(MigrationsFS, migrationsDir)
 	helpers.TLog.Info("Запуск миграции DB")
-	err := tMigrator.ApplyMigrations(openDB())
+	db, err = openDB()
 	if err != nil {
-		panic(err)
+		return err
+	}
+	err = tMigrator.ApplyMigrations(db)
+	if err != nil {
+		return err
 	}
 	helpers.TLog.Info("Завершение миграции DB")
 	DBStorage = dbStorage
+	return nil
 }
 
 func (db DBStorageModel) CreateAuth(authModel model.UserModel) error {
@@ -70,10 +75,10 @@ func (db DBStorageModel) GetOrdersByOrderID(orderID string) (*model.OrdersModel,
 	return &data, nil
 }
 
-func (db DBStorageModel) GetOrdersByNotFinalStatus() (*[]model.OrdersModel, error) {
-	data := make([]model.OrdersModel, 0)
+func (db DBStorageModel) GetOrdersByNotFinalStatus() ([]*model.OrdersModel, error) {
+	data := make([]*model.OrdersModel, 0)
 
-	rows, err := db.DB.QueryContext(db.ctx, "SELECT * from orders where status in ('NEW', 'PROCESSING')")
+	rows, err := db.DB.QueryContext(db.ctx, "SELECT * from orders where status in ('NEW', 'PROCESSING') order by uploaded_at")
 	if err != nil {
 		return nil, err
 	}
@@ -84,18 +89,18 @@ func (db DBStorageModel) GetOrdersByNotFinalStatus() (*[]model.OrdersModel, erro
 		if err != nil {
 			return nil, err
 		}
-		data = append(data, v)
+		data = append(data, &v)
 	}
 
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
-	return &data, nil
+	return data, nil
 }
 
-func (db DBStorageModel) GetOrdersByLogin(login string) (*[]model.OrdersModel, error) {
-	data := make([]model.OrdersModel, 0)
+func (db DBStorageModel) GetOrdersByLogin(login string) ([]*model.OrdersModel, error) {
+	data := make([]*model.OrdersModel, 0, 10)
 
 	rows, err := db.DB.QueryContext(db.ctx, "SELECT * from orders where login = $1", login)
 	if err != nil {
@@ -108,14 +113,14 @@ func (db DBStorageModel) GetOrdersByLogin(login string) (*[]model.OrdersModel, e
 		if err != nil {
 			return nil, err
 		}
-		data = append(data, v)
+		data = append(data, &v)
 	}
 
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
-	return &data, nil
+	return data, nil
 }
 
 func (db DBStorageModel) CreateOrders(ordersModel model.OrdersModel) error {

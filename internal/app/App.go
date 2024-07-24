@@ -13,7 +13,9 @@ import (
 
 func InitServer() {
 	config.InitServerConfig()
-	database.InitDB(context.Background())
+	if err := database.InitDB(context.Background()); err != nil {
+		helpers.TLog.Fatal(err)
+	}
 	go job.OrdersStatusJob()
 	helpers.TLog.Fatal(http.ListenAndServe(config.RunAddress, transport.GetRoutersGophermart()))
 }
