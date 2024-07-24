@@ -173,8 +173,8 @@ func (db DBStorageModel) GetCurrentBalanceByLogin(login string) (*model.CurrentB
 	return &data, nil
 }
 
-func (db DBStorageModel) GetWithdrawnBalanceByLogin(login string) (*[]model.WithdrawnBalanceModel, error) {
-	data := make([]model.WithdrawnBalanceModel, 0)
+func (db DBStorageModel) GetWithdrawnBalanceByLogin(login string) ([]*model.WithdrawnBalanceModel, error) {
+	data := make([]*model.WithdrawnBalanceModel, 0)
 
 	rows, err := db.DB.QueryContext(db.ctx, "SELECT * from withdrawn_balance where login = $1", login)
 	if err != nil {
@@ -187,14 +187,14 @@ func (db DBStorageModel) GetWithdrawnBalanceByLogin(login string) (*[]model.With
 		if err != nil {
 			return nil, err
 		}
-		data = append(data, v)
+		data = append(data, &v)
 	}
 
 	err = rows.Err()
 	if err != nil {
 		return nil, err
 	}
-	return &data, nil
+	return data, nil
 }
 
 func (db DBStorageModel) GetWithdrawnBalanceSumByLogin(login string) (*float64, error) {

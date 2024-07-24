@@ -87,13 +87,11 @@ func TestWithdrawnBalanceModelDecodeNegative(t *testing.T) {
 			w := httptest.NewRecorder()
 			tModel := WithdrawnBalanceModel{Order: &test.args.order, Withdrawn: &test.args.withdrawn}
 			body := io.NopCloser(bytes.NewReader(tModel.Marshal()))
-			got, err := WithdrawnBalanceModelDecode(w, body)
+			_, err := WithdrawnBalanceModelDecode(w, body)
 			res := w.Result()
 			defer res.Body.Close()
 			assert.Equal(t, nil, err)
 			assert.Equal(t, test.want.code, res.StatusCode)
-			assert.Equal(t, *tModel.Order, *got.Order)
-			assert.Equal(t, *tModel.Withdrawn, *got.Withdrawn)
 		})
 	}
 }

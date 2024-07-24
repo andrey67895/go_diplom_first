@@ -14,7 +14,7 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 	login, _ := helpers.DecodeJWT(cookie.Value)
 
 	withdrawnHistory := services.GetWithdrawnBalanceAndSortByLogin(login, w)
-	if len(*withdrawnHistory) == 0 {
+	if len(withdrawnHistory) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
@@ -54,7 +54,7 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
 	login, _ := helpers.DecodeJWT(cookie.Value)
 	orders := services.GetOrdersAndSortByLogin(login, w)
-	if len(*orders) == 0 {
+	if len(orders) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}

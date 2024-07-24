@@ -9,16 +9,15 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
-func GetWithdrawnBalanceAndSortByLogin(login string, w http.ResponseWriter) *[]model.WithdrawnBalanceModel {
+func GetWithdrawnBalanceAndSortByLogin(login string, w http.ResponseWriter) []*model.WithdrawnBalanceModel {
 	withdrawnHistory, err := database.DBStorage.GetWithdrawnBalanceByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
 
 	}
-	tOrders := *withdrawnHistory
-	sort.Slice(tOrders, func(i, j int) bool {
-		return tOrders[i].ProcessedAT.After(*tOrders[j].ProcessedAT)
+	sort.Slice(withdrawnHistory, func(i, j int) bool {
+		return withdrawnHistory[i].ProcessedAT.After(*withdrawnHistory[j].ProcessedAT)
 	})
 	return withdrawnHistory
 }

@@ -50,7 +50,7 @@ func OrdersStatusJob() {
 			helpers.TLog.Error(err.Error())
 			return
 		}
-		for _, order := range *orders {
+		for _, order := range orders {
 			body, _ := GetAndUpdateOrderStatusByAccrual(*order.Login, *order.OrdersID)
 			if body.StatusCode == 429 {
 				i, err := strconv.Atoi(body.Header.Get("Retry-After"))

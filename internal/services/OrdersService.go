@@ -13,15 +13,14 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
-func GetOrdersAndSortByLogin(login string, w http.ResponseWriter) *[]model.OrdersModel {
+func GetOrdersAndSortByLogin(login string, w http.ResponseWriter) []*model.OrdersModel {
 	orders, err := database.DBStorage.GetOrdersByLogin(login)
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 		http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
 	}
-	tOrders := *orders
-	sort.Slice(tOrders, func(i, j int) bool {
-		return tOrders[i].UploadedAT.After(*tOrders[j].UploadedAT)
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].UploadedAT.After(*orders[j].UploadedAT)
 	})
 	return orders
 }
