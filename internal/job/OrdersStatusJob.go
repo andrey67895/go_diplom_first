@@ -45,6 +45,7 @@ func GetAndUpdateOrderStatusByAccrual(login string, number string) (*http.Respon
 func OrdersStatusJob(ctx context.Context, wg *sync.WaitGroup) {
 	second := 1
 	ticker := time.NewTicker(time.Duration(second) * time.Second)
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		for {
