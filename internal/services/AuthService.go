@@ -11,7 +11,7 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
-func GetAuth(tModel model.UserModel, create bool) (*model.UserModel, *model.ApiError) {
+func GetAuth(tModel model.UserModel, create bool) (*model.UserModel, *model.APIError) {
 	auth, err := database.DBStorage.GetAuth(*tModel.Login)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -19,7 +19,7 @@ func GetAuth(tModel model.UserModel, create bool) (*model.UserModel, *model.ApiE
 				err := database.DBStorage.CreateAuth(tModel)
 				if err != nil {
 					helpers.TLog.Error(err.Error())
-					return nil, &model.ApiError{
+					return nil, &model.APIError{
 						Status: http.StatusInternalServerError,
 						Error:  err,
 					}
@@ -27,24 +27,24 @@ func GetAuth(tModel model.UserModel, create bool) (*model.UserModel, *model.ApiE
 			} else {
 				err := fmt.Errorf("неверная пара логин/пароль")
 				helpers.TLog.Error(err.Error())
-				return nil, &model.ApiError{
+				return nil, &model.APIError{
 					Status: http.StatusUnauthorized,
 					Error:  err,
 				}
 			}
 		} else {
-			return nil, &model.ApiError{
+			return nil, &model.APIError{
 				Status: http.StatusInternalServerError,
 				Error:  err,
 			}
 		}
 	}
 	if auth != nil && create {
-		return nil, &model.ApiError{Status: http.StatusConflict,
+		return nil, &model.APIError{Status: http.StatusConflict,
 			Error: fmt.Errorf("пользователь уже существует"),
 		}
 	} else if auth == nil && !create {
-		return nil, &model.ApiError{
+		return nil, &model.APIError{
 			Status: http.StatusUnauthorized,
 			Error:  fmt.Errorf("неверная пара логин/пароль"),
 		}

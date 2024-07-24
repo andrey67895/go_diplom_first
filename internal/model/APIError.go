@@ -1,6 +1,6 @@
 package model
 
-type ApiError struct {
+type APIError struct {
 	Status int
 	Error  error
 }

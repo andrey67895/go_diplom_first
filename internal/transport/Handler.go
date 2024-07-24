@@ -66,7 +66,10 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	withdrawnBalanceSum, err := services.GetWithdrawnBalanceSum(login)
-
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	marshal, err := model.CreateCurrentAndWithdrawnModelForMarshal(currentBalanceModel.Balance, withdrawnBalanceSum)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

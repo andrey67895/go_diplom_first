@@ -30,7 +30,7 @@ func WithdrawnBalanceModelDecode(body io.ReadCloser) (*WithdrawnBalanceModel, er
 		return nil, err
 	}
 	if tModel.Order == nil {
-		err := fmt.Errorf("неверный формат запроса! %s", err.Error())
+		err := fmt.Errorf("неверный формат запроса")
 		return &tModel, err
 	}
 	orderID, err := strconv.Atoi(*tModel.Order)
