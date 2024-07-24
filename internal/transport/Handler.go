@@ -110,7 +110,7 @@ func SaveOrders(w http.ResponseWriter, req *http.Request) {
 	if orderID != nil {
 		tModel := model.OrdersModel{OrdersID: orderID, Login: &login}
 		orders, err := services.GetOrderByOrderIDOrCreate(tModel)
-		if err == nil {
+		if err != nil {
 			http.Error(w, "Ошибка сервера!", http.StatusInternalServerError)
 			return
 		} else {
