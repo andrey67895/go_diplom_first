@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"time"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/andrey67895/go_diplom_first/internal/config"
 	"github.com/andrey67895/go_diplom_first/internal/database/migrator"
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 	"github.com/andrey67895/go_diplom_first/internal/model"
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 var DBStorage DBStorageModel
@@ -139,12 +140,18 @@ func (db DBStorageModel) UpdateOrders(ordersAccrualModel model.OrdersAccrualMode
 		}
 		_, err = tx.ExecContext(db.ctx, `UPDATE orders SET accrual=$1,status=$2 WHERE orders_id=$3`, ordersAccrualModel.Accrual, ordersAccrualModel.Status, ordersAccrualModel.OrderID)
 		if err != nil {
-			tx.Rollback()
+			err2 := tx.Rollback()
+			if err2 != nil {
+				return err2
+			}
 			return err
 		}
 		_, err = tx.ExecContext(db.ctx, `INSERT INTO current_balance as ca (login, current) values ($1,$2) on conflict (login) do update set current = (EXCLUDED.current  + ca."current")`, login, ordersAccrualModel.Accrual)
 		if err != nil {
-			tx.Rollback()
+			err2 := tx.Rollback()
+			if err2 != nil {
+				return err2
+			}
 			return err
 		}
 		err = tx.Commit()
@@ -216,12 +223,18 @@ func (db DBStorageModel) WithdrawnBalanceByLogin(withdrawnBalanceModel model.Wit
 	}
 	_, err = tx.ExecContext(db.ctx, `INSERT INTO withdrawn_balance as wb (login,"order",withdrawn) values ($1,$2,$3)`, withdrawnBalanceModel.Login, withdrawnBalanceModel.Order, withdrawnBalanceModel.Withdrawn)
 	if err != nil {
-		tx.Rollback()
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return err2
+		}
 		return err
 	}
 	_, err = tx.ExecContext(db.ctx, `UPDATE current_balance as cb SET current = (cb.current-$1) WHERE login=$2`, withdrawnBalanceModel.Withdrawn, withdrawnBalanceModel.Login)
 	if err != nil {
-		tx.Rollback()
+		err2 := tx.Rollback()
+		if err2 != nil {
+			return err2
+		}
 		return err
 	}
 

@@ -1,15 +1,16 @@
 version: "3.9"
 services:
   db:
-    image: "postgres:latest"
-    ports:
-      - "5432:5432"
-    restart: always
+    image: postgres:16.4
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_PASSWORD: docker
     volumes:
-      - db:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   accrual:
     build:
       dockerfile: DockerfileAccrualMock
@@ -17,19 +18,27 @@ services:
     restart: always
     ports:
       - "8080:8080"
+    depends_on:
+      - db
+    links:
+      - db
   gophermart:
       build:
         dockerfile: DockerfileGophermart
         context: .
       restart: always
       environment:
-        - DATABASE_URI=host=host.docker.internal port=5432 user=postgres password=postgres dbname=postgres sslmode=disable
+        - DATABASE_URI=host=db port=5432 user=postgres password=docker dbname=postgres sslmode=disable
         - RUN_ADDRESS=:8787
-        - ACCRUAL_SYSTEM_ADDRESS=http://host.docker.internal:8080
+        - ACCRUAL_SYSTEM_ADDRESS=http://accrual:8080
       volumes:
         - .:/opt/app/api
       ports:
         - "8787:8787"
+      depends_on:
+        - db
+      links:
+        - db
+
 volumes:
-   db:
-     driver: local
+  pgdata:

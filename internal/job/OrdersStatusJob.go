@@ -3,6 +3,7 @@ package job
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -23,7 +24,12 @@ func GetAndUpdateOrderStatusByAccrual(login string, number string) (*http.Respon
 	if err != nil {
 		helpers.TLog.Error(err.Error())
 	}
-	defer body.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			helpers.TLog.Error(err.Error())
+		}
+	}(body.Body)
 	if body.StatusCode == http.StatusOK {
 		var tModel model.OrdersAccrualModel
 		err = json.NewDecoder(body.Body).Decode(&tModel)
@@ -71,7 +77,10 @@ func OrdersStatusJob(ctx context.Context, wg *sync.WaitGroup) {
 					} else {
 						ticker.Reset(time.Duration(second) * time.Second)
 					}
-					body.Body.Close()
+					err := body.Body.Close()
+					if err != nil {
+						helpers.TLog.Error(err.Error())
+					}
 				}
 				helpers.TLog.Info("Job: Окончание проверки статусов")
 

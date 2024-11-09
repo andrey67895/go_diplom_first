@@ -1,0 +1,81 @@
+default:
+  tags:
+    - docker
+
+stages:
+  - staticcheck
+  - unit_test
+  - gosec
+  - govulncheck
+  - secretcheck
+  - build_docker
+  - dast
+
+
+staticcheck-job:
+  image: golang:1.22.6
+  stage: staticcheck
+  script:
+    - echo "staticcheck the code..."
+    - go install honnef.co/go/tools/cmd/staticcheck@latest
+    - staticcheck -f stylish ./...
+    - echo "staticcheck the code finish."
+
+unit-test-job:
+  image: golang:1.22.6
+  stage: unit_test
+  script:
+    - go test ./... -v
+
+
+gosec-job:
+  image: golang:1.22.6
+  stage: gosec
+  script:
+    - go install github.com/securego/gosec/v2/cmd/gosec@latest
+    - gosec ./...
+
+govulncheck-job:
+  image: golang:1.22.6
+  stage: govulncheck
+  script:
+    - go install golang.org/x/vuln/cmd/govulncheck@latest
+    - govulncheck ./...
+
+
+secretcheck-job:
+  image: python:3.9
+  stage: secretcheck
+  script:
+    - pip3 install gittyleaks
+    - gittyleaks --verbose
+
+
+build-docker-job:
+  image: docker:20.10.16
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+    DOCKER_DRIVER: overlay2
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+
+  services:
+    - docker:20.10.16-dind
+  stage: build_docker
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+    - >-
+      docker build
+      "${CI_PROJECT_DIR}"
+      --file "${CI_PROJECT_DIR}/DockerfileGophermart"
+      --tag "${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
+    - docker push "${CI_REGISTRY}/${CI_PROJECT_PATH}:${CI_COMMIT_SHORT_SHA}"
+
+
+dast-job:
+  image: ghcr.io/zaproxy/zaproxy:stable
+  stage: dast
+  script:
+    - /zap/zap-api-scan.py -I -t "${HOST_EXTERNAL}/openapi.yaml" -f openapi

@@ -1,28 +1,39 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/json"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/andrey67895/go_diplom_first/internal/helpers"
-	"github.com/andrey67895/go_diplom_first/internal/model"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/andrey67895/go_diplom_first/internal/helpers"
+	"github.com/andrey67895/go_diplom_first/internal/model"
 )
 
 func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP, middleware.Recoverer, middleware.Logger)
 	r.Get("/api/orders/{numbers}", getMockAccrual)
-	helpers.TLog.Fatal(http.ListenAndServe(":8080", r))
+	server := &http.Server{
+		Addr:              ":8080",
+		ReadHeaderTimeout: 3 * time.Second,
+		Handler:           r,
+	}
+
+	helpers.TLog.Fatal(server.ListenAndServe())
 }
 
 func randBool() bool {
-	rand.New(rand.NewSource(time.Now().UnixNano()))
-	return rand.Intn(2) == 1
+	b, err := rand.Int(rand.Reader, big.NewInt(2))
+	if err != nil {
+		return false
+	}
+	return b.Int64() == 1
 }
 
 func getMockAccrual(w http.ResponseWriter, req *http.Request) {
@@ -60,6 +71,10 @@ func getMockAccrual(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write(marshal)
+	_, err = w.Write(marshal)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }

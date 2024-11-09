@@ -7,13 +7,15 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/andrey67895/go_diplom_first/internal/config"
 	"github.com/andrey67895/go_diplom_first/internal/database"
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 	"github.com/andrey67895/go_diplom_first/internal/job"
 	"github.com/andrey67895/go_diplom_first/internal/transport"
-	"golang.org/x/sync/errgroup"
 )
 
 func InitServer() {
@@ -28,8 +30,9 @@ func InitServer() {
 	}
 	job.OrdersStatusJob(ctx, &wg)
 	httpServer := &http.Server{
-		Addr:    config.RunAddress,
-		Handler: transport.GetRoutersGophermart(),
+		Addr:              config.RunAddress,
+		Handler:           transport.GetRoutersGophermart(),
+		ReadHeaderTimeout: 3 * time.Second,
 	}
 	g, gCtx := errgroup.WithContext(ctx)
 	g.Go(func() error {

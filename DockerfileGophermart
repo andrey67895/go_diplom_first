@@ -18,6 +18,7 @@ RUN go build -ldflags="-s -w" -o /app/main cmd/gophermart/main.go
 FROM scratch
 
 WORKDIR /app
+COPY --from=builder /build/api/app.yaml /app/app.yaml
 COPY --from=builder /app/main /app/main
 
 CMD ["./main"]

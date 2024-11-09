@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/andrey67895/go_diplom_first/internal/helpers"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/andrey67895/go_diplom_first/internal/helpers"
 )
 
 func TestWithdrawnBalanceModelDecodePositive(t *testing.T) {
@@ -18,9 +19,8 @@ func TestWithdrawnBalanceModelDecodePositive(t *testing.T) {
 		errorText *string
 	}
 	type args struct {
-		order       string
-		processedAT *time.Time
-		withdrawn   float64
+		order     string
+		withdrawn float64
 	}
 	tests := []struct {
 		name string
@@ -60,9 +60,8 @@ func TestWithdrawnBalanceModelDecodeNegative(t *testing.T) {
 		errorText *string
 	}
 	type args struct {
-		order       string
-		processedAT *time.Time
-		withdrawn   float64
+		order     string
+		withdrawn float64
 	}
 	tests := []struct {
 		name string

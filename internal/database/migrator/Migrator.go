@@ -38,7 +38,12 @@ func (m *Migrator) ApplyMigrations(db *sql.DB) error {
 	}
 
 	defer func() {
-		migrator.Close()
+		err, err2 := migrator.Close()
+		if err != nil {
+			return
+		} else if err2 != nil {
+			return
+		}
 	}()
 
 	if err = migrator.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {

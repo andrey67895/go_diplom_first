@@ -7,7 +7,7 @@ import (
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 )
 
-var notAuthURLPath = []string{"/api/user/register", "/api/user/login"}
+var notAuthURLPath = []string{"/api/user/register", "/api/user/login", "/api/ping", "/apidocs", "/openapi.yaml"}
 
 func itCheckAuth(path string) bool {
 	return !slices.Contains(notAuthURLPath, path)

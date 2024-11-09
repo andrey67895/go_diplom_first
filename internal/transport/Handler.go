@@ -4,10 +4,20 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/andrey67895/go_diplom_first/internal/database"
 	"github.com/andrey67895/go_diplom_first/internal/helpers"
 	"github.com/andrey67895/go_diplom_first/internal/model"
 	"github.com/andrey67895/go_diplom_first/internal/services"
 )
+
+func Ping(w http.ResponseWriter, _ *http.Request) {
+	err := database.DBStorage.DB.Ping()
+	if err != nil {
+		http.Error(w, "Ошибка подключения к БД", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
 
 func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 	cookie, _ := req.Cookie("Token")
@@ -28,7 +38,11 @@ func GetWithdrawalsHistory(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Ошибка записи ответа", http.StatusNotFound)
 		return
 	}
-	w.Write(marshal)
+	_, err = w.Write(marshal)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -77,7 +91,11 @@ func GetBalance(w http.ResponseWriter, req *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(marshal)
+	_, err = w.Write(marshal)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func GetOrders(w http.ResponseWriter, req *http.Request) {
@@ -98,7 +116,11 @@ func GetOrders(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Ошибка записи ответа", http.StatusInternalServerError)
 		return
 	}
-	w.Write(marshal)
+	_, err = w.Write(marshal)
+	if err != nil {
+		http.Error(w, "Ошибка записи ответа", http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
 

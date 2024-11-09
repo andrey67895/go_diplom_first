@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: Asset Manager
+  version: 0.0.1
+servers:
+  - url: http://87.249.53.197:8787
+tags:
+  - name: Asset methods
+paths:
+  /api/ping:
+    get:
+      tags:
+        - Health check methods
+      responses:
+        200:
+          description: ping response
+        500:
+          description: Error in server
+  /api/user/withdrawals:
+    get:
+      tags:
+        - withdrawals
+      responses:
+        200:
+          description: withdrawals response success
+  /api/user/balance/withdraw:
+    post:
+      tags:
+        - withdrawals
+      responses:
+        200:
+          description: withdrawals response success
+  /api/user/balance:
+    get:
+      tags:
+        - balance
+      responses:
+        200:
+          description: balance response success
+  /api/user/orders:
+    get:
+      tags:
+        - orders
+      responses:
+        200:
+          description: orders response success
+    post:
+      tags:
+        - orders
+      responses:
+        200:
+          description: orders response success
+  /api/user/login:
+    post:
+      tags:
+        - login
+      responses:
+        200:
+          description: login response success
+  /api/user/register:
+    post:
+      tags:
+        - register
+      responses:
+        200:
+          description: register response success
